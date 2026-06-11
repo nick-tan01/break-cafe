@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BREAK — Direction 1 · Golden Hour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#F4EBDA; color:#3B2A1D; font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#C75B39; text-decoration:none; }
+  .wrap { max-width:1400px; margin:0 auto; padding:48px 36px 96px; }
+
+  /* ---------- page chrome ---------- */
+  .crumb { font-size:13px; font-weight:500; letter-spacing:.04em; }
+  .crumb a:hover { text-decoration:underline; }
+  .dir-head { margin:28px 0 40px; }
+  .dir-head .kicker { font-size:12px; font-weight:600; letter-spacing:.22em; color:#C75B39; text-transform:uppercase; }
+  .dir-head h1 { font-family:'Fraunces',serif; font-size:54px; font-weight:600; letter-spacing:-.01em; margin:10px 0 12px; }
+  .dir-head p { font-size:17px; line-height:1.6; color:#6B5947; max-width:680px; }
+
+  .brand-grid { display:grid; grid-template-columns:1.15fr .9fr 1fr; gap:20px; align-items:stretch; }
+  @media (max-width:1100px){ .brand-grid { grid-template-columns:1fr; } }
+  .panel { background:#FFFCF4; border:1px solid #E6D8BE; border-radius:18px; padding:28px; }
+  .panel h2 { font-size:12px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:#A08A6E; margin-bottom:20px; }
+  .logo-stage { display:flex; align-items:center; justify-content:center; min-height:220px; background:#FBF4E6; border-radius:12px; padding:24px; }
+  .logo-stage svg { width:100%; max-width:430px; height:auto; }
+  .logo-note { font-size:13px; color:#8A7458; margin-top:14px; line-height:1.55; }
+
+  .swatches { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  .swatch .chip { height:64px; border-radius:10px; border:1px solid rgba(59,42,29,.12); }
+  .swatch .name { font-size:13px; font-weight:600; margin-top:8px; }
+  .swatch .hex { font-size:12px; color:#8A7458; letter-spacing:.04em; }
+
+  .type-row { padding:16px 0; border-bottom:1px solid #EFE3CC; }
+  .type-row:last-child { border-bottom:none; }
+  .type-row .label { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#A08A6E; margin-bottom:6px; }
+  .type-row .sample-display { font-family:'Fraunces',serif; font-size:30px; font-weight:600; }
+  .type-row .sample-body { font-size:16px; font-weight:400; }
+  .type-row .meta { font-size:12.5px; color:#8A7458; margin-top:4px; }
+
+  .phones-head { margin:64px 0 28px; }
+  .phones-head h2 { font-family:'Fraunces',serif; font-size:32px; font-weight:600; }
+  .phones-head p { color:#6B5947; margin-top:6px; font-size:15px; }
+  .phones { display:flex; flex-wrap:wrap; gap:44px; justify-content:center; }
+  .phone-col { display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .phone-col .screen-label { font-size:13px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#A08A6E; }
+
+  /* ---------- device frame ---------- */
+  .device { background:#181210; border-radius:64px; padding:11px; box-shadow:0 24px 48px -20px rgba(59,42,29,.4); }
+  .screen { width:390px; height:844px; border-radius:54px; overflow:hidden; position:relative; background:#FBF4E6; display:flex; flex-direction:column; }
+  .statusbar { height:54px; flex:none; display:flex; align-items:flex-end; justify-content:space-between; padding:0 30px 6px; font-size:15px; font-weight:600; color:#3B2A1D; position:relative; }
+  .island { position:absolute; top:12px; left:50%; transform:translateX(-50%); width:122px; height:35px; background:#0B0908; border-radius:18px; }
+  .sicons { display:flex; align-items:center; gap:6px; }
+  .sicons svg { height:11.5px; width:auto; fill:currentColor; }
+  .homebar { position:absolute; bottom:9px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:3px; background:#3B2A1D; opacity:.85; z-index:30; }
+
+  .ic { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+  .ic.fill { fill:currentColor; stroke:none; }
+
+  .content { flex:1; overflow:hidden; display:flex; flex-direction:column; padding:10px 22px 0; }
+
+  /* ---------- explore ---------- */
+  .greet { margin:8px 2px 18px; }
+  .greet .date { font-size:11.5px; font-weight:600; letter-spacing:.2em; color:#C75B39; text-transform:uppercase; }
+  .greet h1 { font-family:'Fraunces',serif; font-size:30px; font-weight:600; letter-spacing:-.01em; margin-top:6px; }
+  .greet .sub { font-size:14.5px; color:#8A7458; margin-top:5px; }
+  .search-row { display:flex; gap:10px; }
+  .search { flex:1; display:flex; align-items:center; gap:10px; background:#FFFCF4; border:1px solid #E6D8BE; border-radius:999px; padding:13px 18px; color:#A08A6E; font-size:14.5px; }
+  .filter-btn { width:46px; height:46px; flex:none; border-radius:999px; background:#3B2A1D; color:#FBF4E6; display:flex; align-items:center; justify-content:center; }
+  .chips { display:flex; gap:8px; margin:14px 0 4px; }
+  .chip-t { font-size:12.5px; font-weight:500; padding:7px 13px; border-radius:999px; border:1px solid #E0CFAE; color:#6B5947; background:transparent; white-space:nowrap; }
+  .chip-t.on { background:#C75B39; border-color:#C75B39; color:#FFF7EA; font-weight:600; }
+  .sect { display:flex; align-items:baseline; justify-content:space-between; margin:18px 2px 12px; }
+  .sect h2 { font-family:'Fraunces',serif; font-size:20px; font-weight:600; }
+  .sect a { font-size:13px; font-weight:600; }
+  .cafe-card { display:flex; gap:14px; background:#FFFCF4; border:1px solid #E6D8BE; border-radius:18px; padding:12px; margin-bottom:12px; }
+  .thumb { width:96px; height:96px; flex:none; border-radius:12px; }
+  .th-1 { background:linear-gradient(140deg,#E2A75E 10%,#C75B39 90%); }
+  .th-2 { background:linear-gradient(140deg,#9A9B78 5%,#5F6044 95%); }
+  .th-3 { background:linear-gradient(140deg,#D98E64 0%,#8C3D20 100%); }
+  .cafe-info { flex:1; display:flex; flex-direction:column; justify-content:center; gap:5px; min-width:0; }
+  .cafe-info h3 { font-family:'Fraunces',serif; font-size:18.5px; font-weight:600; }
+  .meta-line { display:flex; align-items:center; gap:5px; font-size:12.5px; color:#8A7458; }
+  .meta-line .ic { width:13px; height:13px; }
+  .stat-line { display:flex; align-items:center; gap:8px; margin-top:2px; }
+  .rate { display:flex; align-items:center; gap:4px; font-size:13px; font-weight:600; color:#3B2A1D; }
+  .rate .ic { width:13px; height:13px; color:#E2A75E; }
+  .ready { font-size:11.5px; font-weight:600; color:#C75B39; background:rgba(199,91,57,.1); padding:4px 9px; border-radius:999px; }
+  .openmark { font-size:11.5px; font-weight:600; color:#6F7048; }
+
+  .tabbar { flex:none; height:86px; background:#FFFCF4; border-top:1px solid #EFE3CC; display:flex; padding:10px 14px 26px; }
+  .tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; color:#B3A089; }
+  .tab span { font-size:10px; font-weight:600; letter-spacing:.02em; }
+  .tab.on { color:#C75B39; }
+  .tab .ic { width:22px; height:22px; }
+
+  /* ---------- cafe detail ---------- */
+  .hero { height:212px; flex:none; background:linear-gradient(150deg,#E2A75E 0%,#C75B39 70%,#8C3D20 100%); position:relative; }
+  .hero .nav-btns { position:absolute; top:62px; left:18px; right:18px; display:flex; justify-content:space-between; }
+  .round-btn { width:38px; height:38px; border-radius:999px; background:#FFFCF4; color:#3B2A1D; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(59,42,29,.18); }
+  .detail-card { background:#FBF4E6; margin-top:-26px; border-radius:26px 26px 0 0; padding:24px 22px 0; flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; }
+  .detail-card h1 { font-family:'Fraunces',serif; font-size:27px; font-weight:600; }
+  .detail-meta { display:flex; align-items:center; gap:7px; font-size:13px; color:#8A7458; margin-top:7px; }
+  .detail-meta b { color:#3B2A1D; font-weight:600; display:flex; align-items:center; gap:4px; }
+  .detail-meta .ic { width:13px; height:13px; color:#E2A75E; }
+  .dot { width:3px; height:3px; border-radius:99px; background:#CBB897; }
+  .pickup-pill { display:inline-flex; align-items:center; gap:7px; margin-top:13px; background:#3B2A1D; color:#F7E9CF; font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:999px; align-self:flex-start; }
+  .pickup-pill .ic { width:14px; height:14px; }
+  .cat-chips { display:flex; gap:8px; margin:18px 0 4px; }
+  .menu-sec { font-family:'Fraunces',serif; font-size:18px; font-weight:600; margin:16px 0 4px; }
+  .item { display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid #EFE3CC; }
+  .item-info { flex:1; min-width:0; }
+  .item-info h4 { font-size:15px; font-weight:600; }
+  .item-info p { font-size:12.5px; color:#8A7458; margin-top:3px; }
+  .price { font-size:14.5px; font-weight:600; color:#3B2A1D; }
+  .add-btn { width:32px; height:32px; flex:none; border-radius:999px; border:1.5px solid #C75B39; color:#C75B39; display:flex; align-items:center; justify-content:center; }
+  .add-btn .ic { width:15px; height:15px; stroke-width:2.2; }
+  .cart-bar { position:absolute; left:18px; right:18px; bottom:24px; background:#C75B39; color:#FFF7EA; border-radius:999px; padding:16px 22px; display:flex; justify-content:space-between; align-items:center; font-size:15px; font-weight:600; box-shadow:0 14px 28px -10px rgba(140,61,32,.55); }
+  .cart-bar .count { font-size:12.5px; font-weight:500; opacity:.85; display:block; }
+
+  /* ---------- checkout ---------- */
+  .co-head { display:flex; align-items:center; gap:12px; padding:8px 2px 16px; }
+  .co-head .back { width:38px; height:38px; border-radius:999px; background:#FFFCF4; border:1px solid #E6D8BE; display:flex; align-items:center; justify-content:center; color:#3B2A1D; }
+  .co-head h1 { font-family:'Fraunces',serif; font-size:23px; font-weight:600; }
+  .co-card { background:#FFFCF4; border:1px solid #E6D8BE; border-radius:16px; padding:16px 18px; margin-bottom:14px; }
+  .pickup-row { display:flex; gap:13px; align-items:center; }
+  .pickup-row .badge-ic { width:42px; height:42px; flex:none; border-radius:12px; background:rgba(199,91,57,.12); color:#C75B39; display:flex; align-items:center; justify-content:center; }
+  .pickup-row h3 { font-size:15px; font-weight:600; }
+  .pickup-row p { font-size:12.5px; color:#8A7458; margin-top:3px; }
+  .co-card h2 { font-family:'Fraunces',serif; font-size:17px; font-weight:600; margin-bottom:4px; }
+  .o-item { display:flex; justify-content:space-between; align-items:baseline; padding:9px 0; font-size:14px; }
+  .o-item .qty { color:#C75B39; font-weight:600; margin-right:8px; font-size:13px; }
+  .o-item .nm { font-weight:500; }
+  .o-item .pr { font-weight:600; }
+  .add-more { font-size:13px; font-weight:600; color:#C75B39; padding-top:6px; display:inline-block; }
+  .note-field { display:flex; align-items:center; gap:10px; background:#FFFCF4; border:1px dashed #D8C49E; border-radius:14px; padding:14px 16px; color:#A08A6E; font-size:13.5px; margin-bottom:14px; }
+  .tip-title { font-size:15px; font-weight:600; margin-bottom:3px; }
+  .tip-sub { font-size:12px; color:#8A7458; margin-bottom:12px; }
+  .tip-opts { display:flex; gap:8px; }
+  .tip { flex:1; text-align:center; font-size:13.5px; font-weight:600; padding:11px 0; border-radius:999px; border:1.5px solid #E0CFAE; color:#6B5947; }
+  .tip.on { background:#C75B39; border-color:#C75B39; color:#FFF7EA; }
+  .sum-row { display:flex; justify-content:space-between; font-size:14px; color:#6B5947; padding:5px 0; }
+  .sum-row.total { border-top:1px solid #EFE3CC; margin-top:8px; padding-top:12px; font-family:'Fraunces',serif; font-size:18px; font-weight:600; color:#3B2A1D; }
+  .pay-btn { margin-top:4px; background:#C75B39; color:#FFF7EA; border-radius:999px; padding:17px 0; text-align:center; font-size:16.5px; font-weight:600; box-shadow:0 14px 28px -10px rgba(140,61,32,.5); }
+  .pay-note { text-align:center; font-size:11.5px; color:#A08A6E; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="crumb"><a href="index.html">&larr; All five directions</a></p>
+  <header class="dir-head">
+    <p class="kicker">Direction 1 of 5 · Warm Editorial</p>
+    <h1>Golden Hour</h1>
+    <p>The neighborhood cafe at 7:40 AM, before the rush. Cream paper, terracotta ink, and serif headlines borrowed from a Sunday food journal. BREAK as a small daily ritual — unhurried, warm, analog. For students who romanticize their coffee run.</p>
+  </header>
+
+  <section class="brand-grid">
+    <div class="panel">
+      <h2>Logo</h2>
+      <div class="logo-stage">
+        <svg viewBox="0 0 560 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="break wordmark with sunrise cup mark">
+          <g stroke="#C75B39" stroke-width="5" stroke-linecap="round">
+            <line x1="85" y1="46" x2="85" y2="30"/><line x1="108" y1="52.2" x2="116" y2="38.4"/><line x1="124.8" y1="69" x2="138.6" y2="61"/><line x1="62" y1="52.2" x2="54" y2="38.4"/><line x1="45.2" y1="69" x2="31.4" y2="61"/>
+          </g>
+          <path d="M49 92a36 36 0 0 1 72 0z" fill="#E2A75E"/>
+          <path d="M43 100a42 34 0 0 0 84 0z" fill="#3B2A1D"/>
+          <path d="M127 104a15 15 0 0 1 0 26" fill="none" stroke="#3B2A1D" stroke-width="7" stroke-linecap="round"/>
+          <rect x="57" y="142" width="56" height="7" rx="3.5" fill="#3B2A1D"/>
+          <text x="186" y="120" font-family="Fraunces,serif" font-weight="600" font-size="96" letter-spacing="-2"><tspan fill="#3B2A1D">break</tspan><tspan fill="#C75B39">.</tspan></text>
+        </svg>
+      </div>
+      <p class="logo-note">Sun rising over the cup rim — golden hour, taken slowly. The cup mark stands alone as the app icon; the lowercase serif wordmark with the terracotta full stop says &ldquo;done rushing.&rdquo;</p>
+    </div>
+    <div class="panel">
+      <h2>Palette</h2>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:#FBF4E6"></div><div class="name">Steamed Cream</div><div class="hex">#FBF4E6</div></div>
+        <div class="swatch"><div class="chip" style="background:#3B2A1D"></div><div class="name">Espresso Ink</div><div class="hex">#3B2A1D</div></div>
+        <div class="swatch"><div class="chip" style="background:#C75B39"></div><div class="name">Terracotta</div><div class="hex">#C75B39</div></div>
+        <div class="swatch"><div class="chip" style="background:#E2A75E"></div><div class="name">Honey</div><div class="hex">#E2A75E</div></div>
+        <div class="swatch"><div class="chip" style="background:#6F7048"></div><div class="name">Olive</div><div class="hex">#6F7048</div></div>
+        <div class="swatch"><div class="chip" style="background:#FFFCF4"></div><div class="name">Paper</div><div class="hex">#FFFCF4</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Typography</h2>
+      <div class="type-row">
+        <div class="label">Display · Fraunces</div>
+        <div class="sample-display">Good morning, Nick</div>
+        <div class="meta">SemiBold 600 &amp; Medium 500 — headlines, cafe names, totals</div>
+      </div>
+      <div class="type-row">
+        <div class="label">Text · Inter</div>
+        <div class="sample-body">Ready in 8 min · 7901 Sunset Blvd</div>
+        <div class="meta">Regular 400, Medium 500, SemiBold 600 — UI, metadata, buttons</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="phones-head">
+    <h2>Screens</h2>
+    <p>Explore &middot; Cafe menu &middot; Checkout — rendered at iPhone 390&times;844.</p>
+  </div>
+
+  <section class="phones">
+
+    <!-- ============ SCREEN 1: EXPLORE ============ -->
+    <div class="phone-col">
+      <div class="device"><div class="screen">
+        <div class="statusbar"><span>9:41</span><div class="island"></div><span class="sicons">
+          <svg viewBox="0 0 18 12"><rect y="7" width="3" height="5" rx="1"/><rect x="5" y="4.5" width="3" height="7.5" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" width="3" height="12" rx="1" opacity=".35"/></svg>
+          <svg viewBox="0 0 16 12"><path d="M8 11.6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/><path d="M3.6 7.2a6.2 6.2 0 0 1 8.8 0L11 8.6a4.2 4.2 0 0 0-6 0z"/><path d="M.8 4.4a10.2 10.2 0 0 1 14.4 0L13.8 5.8a8.2 8.2 0 0 0-11.6 0z"/></svg>
+          <svg viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.2" y="2.2" width="14" height="7.6" rx="2"/><path d="M23.5 4.2v3.6c1-.3 1.5-1 1.5-1.8s-.5-1.5-1.5-1.8z" opacity=".4"/></svg>
+        </span></div>
+        <div class="content">
+          <div class="greet">
+            <p class="date">Thursday, June 11</p>
+            <h1>Good morning, Nick</h1>
+            <p class="sub">Your coffee&rsquo;s waiting. Take it slow.</p>
+          </div>
+          <div class="search-row">
+            <div class="search"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.2-4.2"/></svg>Search cafes, drinks, pastries&hellip;</div>
+            <div class="filter-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h8M18 7h2M4 17h4M14 17h6"/><circle cx="15" cy="7" r="2.4"/><circle cx="10" cy="17" r="2.4"/></svg></div>
+          </div>
+          <div class="chips">
+            <span class="chip-t on">Open now</span><span class="chip-t">Under 1 mi</span><span class="chip-t">Top rated</span><span class="chip-t">New</span>
+          </div>
+          <div class="sect"><h2>Near you</h2><a href="#">Map view</a></div>
+
+          <div class="cafe-card">
+            <div class="thumb th-1"></div>
+            <div class="cafe-info">
+              <h3>Sunset Brew</h3>
+              <div class="meta-line"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21.5S5.5 16 5.5 10.4a6.5 6.5 0 0 1 13 0C18.5 16 12 21.5 12 21.5z"/><circle cx="12" cy="10.4" r="2.4"/></svg>0.4 mi &middot; 7901 Sunset Blvd</div>
+              <div class="stat-line">
+                <span class="rate"><svg class="ic fill" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.5 1.1 6.3L12 17.4l-5.7 2.9 1.1-6.3L2.8 9.5l6.4-.9z"/></svg>4.6</span>
+                <span class="ready">Ready in 8 min</span>
+                <span class="openmark">Open</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="cafe-card">
+            <div class="thumb th-2"></div>
+            <div class="cafe-info">
+              <h3>Highland Roasters</h3>
+              <div class="meta-line"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21.5S5.5 16 5.5 10.4a6.5 6.5 0 0 1 13 0C18.5 16 12 21.5 12 21.5z"/><circle cx="12" cy="10.4" r="2.4"/></svg>1.1 mi &middot; 5715 N Figueroa St</div>
+              <div class="stat-line">
+                <span class="rate"><svg class="ic fill" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.5 1.1 6.3L12 17.4l-5.7 2.9 1.1-6.3L2.8 9.5l6.4-.9z"/></svg>4.4</span>
+                <span class="ready">Ready in 12 min</span>
+                <span class="openmark">Open</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="cafe-card">
+            <div class="thumb th-3"></div>
+            <div class="cafe-info">
+              <h3>Venice Bean</h3>
+              <div class="meta-line"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21.5S5.5 16 5.5 10.4a6.5 6.5 0 0 1 13 0C18.5 16 12 21.5 12 21.5z"/><circle cx="12" cy="10.4" r="2.4"/></svg>2.3 mi &middot; 1400 Abbot Kinney Blvd</div>
+              <div class="stat-line">
+                <span class="rate"><svg class="ic fill" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.5 1.1 6.3L12 17.4l-5.7 2.9 1.1-6.3L2.8 9.5l6.4-.9z"/></svg>4.8</span>
+                <span class="ready">Ready in 10 min</span>
+                <span class="openmark">Open</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab on"><svg class="ic" viewBox="0 0 24 24"><path d="m3.5 10.5 8.5-7 8.5 7"/><path d="M6 9.5V20h12V9.5"/></svg><span>Explore</span></div>
+          <div class="tab"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.2-4.2"/></svg><span>Search</span></div>
+          <div class="tab"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h12v18l-2-1.4L14 21l-2-1.4L10 21l-2-1.4L6 21z"/><path d="M9.5 8h5M9.5 12h5"/></svg><span>Orders</span></div>
+          <div class="tab"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span>Profile</span></div>
+        </div>
+        <div class="homebar"></div>
+      </div></div>
+      <span class="screen-label">Explore</span>
+    </div>
+
+    <!-- ============ SCREEN 2: CAFE MENU ============ -->
+    <div class="phone-col">
+      <div class="device"><div class="screen">
+        <div class="hero">
+          <div class="statusbar" style="color:#FFF7EA"><span>9:41</span><div class="island"></div><span class="sicons">
+            <svg viewBox="0 0 18 12"><rect y="7" width="3" height="5" rx="1"/><rect x="5" y="4.5" width="3" height="7.5" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" width="3" height="12" rx="1" opacity=".35"/></svg>
+            <svg viewBox="0 0 16 12"><path d="M8 11.6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/><path d="M3.6 7.2a6.2 6.2 0 0 1 8.8 0L11 8.6a4.2 4.2 0 0 0-6 0z"/><path d="M.8 4.4a10.2 10.2 0 0 1 14.4 0L13.8 5.8a8.2 8.2 0 0 0-11.6 0z"/></svg>
+            <svg viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.2" y="2.2" width="14" height="7.6" rx="2"/><path d="M23.5 4.2v3.6c1-.3 1.5-1 1.5-1.8s-.5-1.5-1.5-1.8z" opacity=".4"/></svg>
+          </span></div>
+          <div class="nav-btns">
+            <div class="round-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M14.5 5 7.5 12l7 7"/></svg></div>
+            <div class="round-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 20.5C7 16.5 3.5 13.4 3.5 9.7A4.4 4.4 0 0 1 8 5.3c1.7 0 3.2.9 4 2.3a4.7 4.7 0 0 1 4-2.3 4.4 4.4 0 0 1 4.5 4.4c0 3.7-3.5 6.8-8.5 10.8z"/></svg></div>
+          </div>
+        </div>
+        <div class="detail-card">
+          <h1>Sunset Brew</h1>
+          <div class="detail-meta">
+            <b><svg class="ic fill" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.5 1.1 6.3L12 17.4l-5.7 2.9 1.1-6.3L2.8 9.5l6.4-.9z"/></svg>4.6 (212)</b>
+            <span class="dot"></span><span>0.4 mi</span><span class="dot"></span><span>Open until 6 PM</span>
+          </div>
+          <div class="pickup-pill"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Pickup in 8&ndash;10 min</div>
+          <div class="cat-chips">
+            <span class="chip-t on">Espresso</span><span class="chip-t">Filter</span><span class="chip-t">Pastries</span><span class="chip-t">Breakfast</span>
+          </div>
+
+          <div class="menu-sec">Espresso</div>
+          <div class="item"><div class="item-info"><h4>Oat Milk Latte</h4><p>House espresso, velvety oat milk</p></div><span class="price">$5.75</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="item"><div class="item-info"><h4>Cappuccino</h4><p>Double shot, dry microfoam</p></div><span class="price">$5.25</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="item"><div class="item-info"><h4>Cortado</h4><p>Equal parts espresso &amp; steamed milk</p></div><span class="price">$4.75</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+
+          <div class="menu-sec">Filter</div>
+          <div class="item"><div class="item-info"><h4>Pour Over</h4><p>Single origin &middot; Ethiopia Guji</p></div><span class="price">$5.50</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="item"><div class="item-info"><h4>Cold Brew</h4><p>18-hour steep, served black</p></div><span class="price">$5.00</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="item" style="border-bottom:none"><div class="item-info"><h4>Almond Croissant</h4><p>Twice-baked, frangipane center</p></div><span class="price">$4.95</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+
+          <div class="cart-bar"><span><span class="count">2 items</span>View order</span><span>$10.70</span></div>
+        </div>
+        <div class="homebar"></div>
+      </div></div>
+      <span class="screen-label">Cafe menu</span>
+    </div>
+
+    <!-- ============ SCREEN 3: CHECKOUT ============ -->
+    <div class="phone-col">
+      <div class="device"><div class="screen">
+        <div class="statusbar"><span>9:41</span><div class="island"></div><span class="sicons">
+          <svg viewBox="0 0 18 12"><rect y="7" width="3" height="5" rx="1"/><rect x="5" y="4.5" width="3" height="7.5" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" width="3" height="12" rx="1" opacity=".35"/></svg>
+          <svg viewBox="0 0 16 12"><path d="M8 11.6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/><path d="M3.6 7.2a6.2 6.2 0 0 1 8.8 0L11 8.6a4.2 4.2 0 0 0-6 0z"/><path d="M.8 4.4a10.2 10.2 0 0 1 14.4 0L13.8 5.8a8.2 8.2 0 0 0-11.6 0z"/></svg>
+          <svg viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.2" y="2.2" width="14" height="7.6" rx="2"/><path d="M23.5 4.2v3.6c1-.3 1.5-1 1.5-1.8s-.5-1.5-1.5-1.8z" opacity=".4"/></svg>
+        </span></div>
+        <div class="content">
+          <div class="co-head">
+            <div class="back"><svg class="ic" viewBox="0 0 24 24"><path d="M14.5 5 7.5 12l7 7"/></svg></div>
+            <h1>Checkout</h1>
+          </div>
+
+          <div class="co-card">
+            <div class="pickup-row">
+              <div class="badge-ic"><svg class="ic" viewBox="0 0 24 24" style="width:20px;height:20px"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div>
+              <div><h3>Pickup at Sunset Brew</h3><p>7901 Sunset Blvd &middot; Ready in ~8 min</p></div>
+            </div>
+          </div>
+
+          <div class="co-card">
+            <h2>Your order</h2>
+            <div class="o-item"><span><span class="qty">1&times;</span><span class="nm">Oat Milk Latte</span></span><span class="pr">$5.75</span></div>
+            <div class="o-item"><span><span class="qty">1&times;</span><span class="nm">Almond Croissant</span></span><span class="pr">$4.95</span></div>
+            <a class="add-more" href="#">+ Add more items</a>
+          </div>
+
+          <div class="note-field"><svg class="ic" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M4 20l1.2-4.2L16.4 4.6a2.1 2.1 0 0 1 3 3L8.2 18.8z"/></svg>Add a note for the barista&hellip;</div>
+
+          <div class="co-card">
+            <div class="tip-title">Say thanks with a tip</div>
+            <div class="tip-sub">100% goes to the team at Sunset Brew</div>
+            <div class="tip-opts">
+              <span class="tip">No tip</span><span class="tip">10%</span><span class="tip on">15%</span><span class="tip">20%</span>
+            </div>
+          </div>
+
+          <div class="co-card">
+            <div class="sum-row"><span>Subtotal</span><span>$10.70</span></div>
+            <div class="sum-row"><span>Tip</span><span>$1.61</span></div>
+            <div class="sum-row total"><span>Total</span><span>$12.31</span></div>
+          </div>
+
+          <div class="pay-btn">Pay $12.31</div>
+          <p class="pay-note">Skip the line — show your pickup code at the counter.</p>
+        </div>
+        <div class="homebar"></div>
+      </div></div>
+      <span class="screen-label">Checkout</span>
+    </div>
+
+  </section>
+</div>
+</body>
+</html>

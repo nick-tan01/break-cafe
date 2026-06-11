@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BREAK — Direction 2 · Heavy Pour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#E8E4D8; color:#141414; font-family:'Space Grotesk',sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#141414; text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px; }
+  .wrap { max-width:1400px; margin:0 auto; padding:48px 36px 96px; }
+
+  .crumb { font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .dir-head { margin:28px 0 40px; }
+  .dir-head .kicker { display:inline-block; font-size:12px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; background:#141414; color:#D8F34F; padding:6px 12px; }
+  .dir-head h1 { font-family:'Archivo Black',sans-serif; font-size:60px; text-transform:uppercase; letter-spacing:-.01em; margin:16px 0 14px; }
+  .dir-head p { font-size:17px; line-height:1.6; color:#3c3a33; max-width:680px; font-weight:500; }
+
+  .brand-grid { display:grid; grid-template-columns:1.1fr .95fr 1fr; gap:20px; align-items:stretch; }
+  @media (max-width:1100px){ .brand-grid { grid-template-columns:1fr; } }
+  .panel { background:#F4F1E7; border:3px solid #141414; padding:28px; box-shadow:7px 7px 0 #141414; }
+  .panel h2 { font-family:'Archivo Black',sans-serif; font-size:13px; letter-spacing:.14em; text-transform:uppercase; margin-bottom:20px; }
+  .logo-stage { display:flex; align-items:center; justify-content:center; min-height:230px; background:#D8F34F; border:3px solid #141414; padding:24px; }
+  .logo-stage svg { width:200px; height:auto; }
+  .logo-note { font-size:13.5px; color:#3c3a33; margin-top:14px; line-height:1.55; font-weight:500; }
+
+  .swatches { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  .swatch .chip { height:64px; border:3px solid #141414; }
+  .swatch .name { font-size:13px; font-weight:700; margin-top:8px; text-transform:uppercase; letter-spacing:.04em; }
+  .swatch .hex { font-size:12px; color:#6b685c; letter-spacing:.05em; }
+
+  .type-row { padding:16px 0; border-bottom:3px solid #141414; }
+  .type-row:last-child { border-bottom:none; }
+  .type-row .label { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#6b685c; font-weight:700; margin-bottom:6px; }
+  .type-row .sample-display { font-family:'Archivo Black',sans-serif; font-size:27px; text-transform:uppercase; }
+  .type-row .sample-body { font-size:16px; font-weight:500; }
+  .type-row .meta { font-size:12.5px; color:#6b685c; margin-top:4px; }
+
+  .phones-head { margin:64px 0 28px; }
+  .phones-head h2 { font-family:'Archivo Black',sans-serif; font-size:34px; text-transform:uppercase; }
+  .phones-head p { color:#3c3a33; margin-top:6px; font-size:15px; font-weight:500; }
+  .phones { display:flex; flex-wrap:wrap; gap:44px; justify-content:center; }
+  .phone-col { display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .phone-col .screen-label { font-size:13px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
+
+  .device { background:#141414; border-radius:64px; padding:11px; box-shadow:10px 10px 0 rgba(20,20,20,.25); }
+  .screen { width:390px; height:844px; border-radius:54px; overflow:hidden; position:relative; background:#F4F1E7; display:flex; flex-direction:column; }
+  .statusbar { height:54px; flex:none; display:flex; align-items:flex-end; justify-content:space-between; padding:0 30px 6px; font-size:15px; font-weight:700; color:#141414; position:relative; }
+  .island { position:absolute; top:12px; left:50%; transform:translateX(-50%); width:122px; height:35px; background:#0B0B0B; border-radius:18px; }
+  .sicons { display:flex; align-items:center; gap:6px; }
+  .sicons svg { height:11.5px; width:auto; fill:currentColor; }
+  .homebar { position:absolute; bottom:9px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:3px; background:#141414; z-index:30; }
+
+  .ic { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:square; stroke-linejoin:miter; flex:none; }
+  .ic.fill { fill:currentColor; stroke:none; }
+
+  .content { flex:1; overflow:hidden; display:flex; flex-direction:column; padding:10px 20px 0; }
+
+  /* ---------- explore ---------- */
+  .greet { margin:6px 2px 16px; }
+  .greet .date { font-size:11px; font-weight:700; letter-spacing:.2em; }
+  .greet h1 { font-family:'Archivo Black',sans-serif; font-size:34px; line-height:1.02; text-transform:uppercase; margin-top:8px; }
+  .greet h1 .hl { background:#D8F34F; padding:0 6px; box-decoration-break:clone; -webkit-box-decoration-break:clone; }
+  .greet .sub { font-size:14px; font-weight:500; color:#3c3a33; margin-top:8px; }
+  .search-row { display:flex; gap:10px; }
+  .search { flex:1; display:flex; align-items:center; gap:10px; background:#fff; border:3px solid #141414; padding:11px 14px; color:#6b685c; font-size:14px; font-weight:500; }
+  .filter-btn { width:48px; height:48px; flex:none; background:#141414; color:#D8F34F; display:flex; align-items:center; justify-content:center; }
+  .chips { display:flex; gap:8px; margin:14px 0 2px; }
+  .chip-t { font-size:11.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:7px 11px; border:2.5px solid #141414; color:#141414; background:#fff; white-space:nowrap; }
+  .chip-t.on { background:#141414; color:#D8F34F; }
+  .sect { display:flex; align-items:baseline; justify-content:space-between; margin:16px 2px 12px; }
+  .sect h2 { font-family:'Archivo Black',sans-serif; font-size:17px; text-transform:uppercase; }
+  .sect a { font-size:12px; font-weight:700; text-transform:uppercase; }
+  .cafe-card { display:flex; background:#fff; border:3px solid #141414; margin-bottom:13px; box-shadow:5px 5px 0 #141414; }
+  .thumb { width:104px; flex:none; border-right:3px solid #141414; }
+  .th-1 { background:repeating-linear-gradient(-45deg,#FF5A1F 0 14px,#141414 14px 18px); }
+  .th-2 { background:repeating-linear-gradient(-45deg,#D8F34F 0 14px,#141414 14px 18px); }
+  .th-3 { background:repeating-linear-gradient(-45deg,#B9B6AC 0 14px,#141414 14px 18px); }
+  .cafe-info { flex:1; padding:12px 14px; min-width:0; }
+  .cafe-info h3 { font-family:'Archivo Black',sans-serif; font-size:16px; text-transform:uppercase; letter-spacing:.01em; }
+  .meta-line { font-size:12px; font-weight:500; color:#3c3a33; margin-top:5px; }
+  .stat-line { display:flex; align-items:center; gap:8px; margin-top:9px; flex-wrap:wrap; }
+  .rate { display:flex; align-items:center; gap:4px; font-size:12.5px; font-weight:700; }
+  .rate .ic { width:13px; height:13px; }
+  .ready { font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; background:#141414; color:#D8F34F; padding:4px 8px; }
+  .openmark { font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; border:2px solid #141414; padding:2.5px 7px; }
+
+  .tabbar { flex:none; height:86px; background:#141414; display:flex; padding:12px 14px 26px; }
+  .tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; color:#7d7b6f; }
+  .tab span { font-size:9.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+  .tab.on { color:#D8F34F; }
+  .tab .ic { width:21px; height:21px; }
+
+  /* ---------- cafe detail ---------- */
+  .hero { height:204px; flex:none; background:repeating-linear-gradient(-45deg,#FF5A1F 0 22px,#141414 22px 30px); position:relative; border-bottom:3px solid #141414; }
+  .hero .nav-btns { position:absolute; top:62px; left:18px; right:18px; display:flex; justify-content:space-between; }
+  .round-btn { width:40px; height:40px; background:#F4F1E7; border:3px solid #141414; color:#141414; display:flex; align-items:center; justify-content:center; box-shadow:3px 3px 0 #141414; }
+  .detail-card { background:#F4F1E7; padding:20px 20px 0; flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; }
+  .detail-card h1 { font-family:'Archivo Black',sans-serif; font-size:25px; text-transform:uppercase; line-height:1.05; }
+  .detail-meta { font-size:12.5px; font-weight:700; letter-spacing:.04em; margin-top:9px; text-transform:uppercase; }
+  .detail-meta .sep { color:#FF5A1F; padding:0 5px; }
+  .pickup-pill { display:inline-flex; align-items:center; gap:7px; margin-top:12px; background:#D8F34F; border:3px solid #141414; color:#141414; font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:7px 12px; align-self:flex-start; box-shadow:3px 3px 0 #141414; }
+  .pickup-pill .ic { width:14px; height:14px; }
+  .cat-chips { display:flex; gap:8px; margin:16px 0 2px; }
+  .menu-sec { font-family:'Archivo Black',sans-serif; font-size:15px; text-transform:uppercase; margin:16px 0 6px; display:flex; align-items:center; gap:10px; }
+  .menu-sec::after { content:""; flex:1; height:3px; background:#141414; }
+  .item { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:2px solid rgba(20,20,20,.15); }
+  .item-info { flex:1; min-width:0; }
+  .item-info h4 { font-size:14.5px; font-weight:700; }
+  .item-info p { font-size:12px; font-weight:500; color:#3c3a33; margin-top:3px; }
+  .price { font-size:14px; font-weight:700; }
+  .add-btn { width:32px; height:32px; flex:none; background:#141414; color:#D8F34F; display:flex; align-items:center; justify-content:center; }
+  .add-btn .ic { width:15px; height:15px; }
+  .cart-bar { position:absolute; left:16px; right:16px; bottom:24px; background:#141414; color:#D8F34F; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; box-shadow:5px 5px 0 rgba(20,20,20,.3); }
+
+  /* ---------- checkout ---------- */
+  .co-head { display:flex; align-items:center; gap:12px; padding:8px 2px 14px; }
+  .co-head .back { width:40px; height:40px; background:#fff; border:3px solid #141414; display:flex; align-items:center; justify-content:center; }
+  .co-head h1 { font-family:'Archivo Black',sans-serif; font-size:21px; text-transform:uppercase; }
+  .co-card { background:#fff; border:3px solid #141414; padding:15px 16px; margin-bottom:13px; box-shadow:5px 5px 0 #141414; }
+  .pickup-row { display:flex; gap:13px; align-items:center; }
+  .pickup-row .badge-ic { width:42px; height:42px; flex:none; background:#D8F34F; border:3px solid #141414; display:flex; align-items:center; justify-content:center; }
+  .pickup-row h3 { font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+  .pickup-row p { font-size:12px; font-weight:500; color:#3c3a33; margin-top:3px; }
+  .co-card h2 { font-family:'Archivo Black',sans-serif; font-size:13px; letter-spacing:.08em; text-transform:uppercase; margin-bottom:6px; }
+  .o-item { display:flex; justify-content:space-between; align-items:baseline; padding:8px 0; font-size:14px; font-weight:500; border-bottom:2px solid rgba(20,20,20,.12); }
+  .o-item:last-of-type { border-bottom:none; }
+  .o-item .qty { font-weight:700; background:#141414; color:#fff; font-size:11px; padding:2px 6px; margin-right:9px; }
+  .o-item .pr { font-weight:700; }
+  .note-field { display:flex; align-items:center; gap:10px; background:#fff; border:3px dashed #141414; padding:13px 15px; color:#6b685c; font-size:13px; font-weight:500; margin-bottom:13px; }
+  .tip-title { font-family:'Archivo Black',sans-serif; font-size:13px; letter-spacing:.08em; text-transform:uppercase; }
+  .tip-sub { font-size:12px; font-weight:500; color:#3c3a33; margin:4px 0 12px; }
+  .tip-opts { display:flex; gap:8px; }
+  .tip { flex:1; text-align:center; font-size:13px; font-weight:700; padding:11px 0; border:3px solid #141414; background:#fff; }
+  .tip.on { background:#D8F34F; box-shadow:3px 3px 0 #141414; }
+  .sum-row { display:flex; justify-content:space-between; font-size:14px; font-weight:500; padding:5px 0; }
+  .sum-row.total { border-top:3px solid #141414; margin-top:8px; padding-top:11px; font-family:'Archivo Black',sans-serif; font-size:18px; text-transform:uppercase; }
+  .pay-btn { margin-top:4px; background:#141414; color:#D8F34F; padding:17px 0; text-align:center; font-family:'Archivo Black',sans-serif; font-size:17px; letter-spacing:.06em; text-transform:uppercase; box-shadow:5px 5px 0 rgba(20,20,20,.3); }
+  .pay-note { text-align:center; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#6b685c; margin-top:11px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="crumb"><a href="index.html">&larr; All five directions</a></p>
+  <header class="dir-head">
+    <span class="kicker">Direction 2 of 5 · Brutalist</span>
+    <h1>Heavy Pour</h1>
+    <p>Coffee for people moving fast. Near-black ink on bone and acid yellow, chunky uppercase type, hard borders, shadows that don&rsquo;t blur. Zero preciousness — the whole interface is a flyer stapled to a telephone pole on Figueroa. Skip the line. That&rsquo;s the product. Say it loud.</p>
+  </header>
+
+  <section class="brand-grid">
+    <div class="panel">
+      <h2>Logo</h2>
+      <div class="logo-stage">
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BREAK broken wordmark tile">
+          <rect x="6" y="6" width="188" height="188" fill="#D8F34F" stroke="#141414" stroke-width="10"/>
+          <text x="100" y="88" font-family="'Archivo Black',sans-serif" font-size="62" text-anchor="middle" fill="#141414" letter-spacing="2">BRE</text>
+          <path d="M22 103h38l11-13 13 26 11-13h83" fill="none" stroke="#141414" stroke-width="7" stroke-linejoin="round"/>
+          <text x="100" y="172" font-family="'Archivo Black',sans-serif" font-size="62" text-anchor="middle" fill="#141414" letter-spacing="2">AK.</text>
+        </svg>
+      </div>
+      <p class="logo-note">The wordmark, literally broken — a crack splits BREAK across two lines. Already a perfect square, so it drops straight onto the home screen as the app icon.</p>
+    </div>
+    <div class="panel">
+      <h2>Palette</h2>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:#F4F1E7"></div><div class="name">Bone</div><div class="hex">#F4F1E7</div></div>
+        <div class="swatch"><div class="chip" style="background:#141414"></div><div class="name">Tar</div><div class="hex">#141414</div></div>
+        <div class="swatch"><div class="chip" style="background:#D8F34F"></div><div class="name">Acid</div><div class="hex">#D8F34F</div></div>
+        <div class="swatch"><div class="chip" style="background:#FF5A1F"></div><div class="name">Signal</div><div class="hex">#FF5A1F</div></div>
+        <div class="swatch"><div class="chip" style="background:#B9B6AC"></div><div class="name">Concrete</div><div class="hex">#B9B6AC</div></div>
+        <div class="swatch"><div class="chip" style="background:#FFFFFF"></div><div class="name">Flat White</div><div class="hex">#FFFFFF</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Typography</h2>
+      <div class="type-row">
+        <div class="label">Display · Archivo Black</div>
+        <div class="sample-display">Skip the line.</div>
+        <div class="meta">One weight, always uppercase — headlines, names, buttons</div>
+      </div>
+      <div class="type-row">
+        <div class="label">Text · Space Grotesk</div>
+        <div class="sample-body">Ready in 8 min · 5715 N Figueroa St</div>
+        <div class="meta">Regular 400, Medium 500, Bold 700 — UI, prices, metadata</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="phones-head">
+    <h2>Screens</h2>
+    <p>Explore &middot; Cafe menu &middot; Checkout — rendered at iPhone 390&times;844.</p>
+  </div>
+
+  <section class="phones">
+
+    <!-- ============ SCREEN 1: EXPLORE ============ -->
+    <div class="phone-col">
+      <div class="device"><div class="screen">
+        <div class="statusbar"><span>9:41</span><div class="island"></div><span class="sicons">
+          <svg viewBox="0 0 18 12"><rect y="7" width="3" height="5" rx="1"/><rect x="5" y="4.5" width="3" height="7.5" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" width="3" height="12" rx="1" opacity=".35"/></svg>
+          <svg viewBox="0 0 16 12"><path d="M8 11.6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/><path d="M3.6 7.2a6.2 6.2 0 0 1 8.8 0L11 8.6a4.2 4.2 0 0 0-6 0z"/><path d="M.8 4.4a10.2 10.2 0 0 1 14.4 0L13.8 5.8a8.2 8.2 0 0 0-11.6 0z"/></svg>
+          <svg viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.2" y="2.2" width="14" height="7.6" rx="2"/><path d="M23.5 4.2v3.6c1-.3 1.5-1 1.5-1.8s-.5-1.5-1.5-1.8z" opacity=".4"/></svg>
+        </span></div>
+        <div class="content">
+          <div class="greet">
+            <p class="date">THU 06.11 — LOS ANGELES</p>
+            <h1><span class="hl">Skip</span> the line, Nick.</h1>
+            <p class="sub">3 cafes in walking distance. Coffee on your clock.</p>
+          </div>
+          <div class="search-row">
+            <div class="search"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.2-4.2"/></svg>Search cafes or drinks</div>
+            <div class="filter-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h8M18 7h2M4 17h4M14 17h6"/><circle cx="15" cy="7" r="2.4"/><circle cx="10" cy="17" r="2.4"/></svg></div>
+          </div>
+          <div class="chips">
+            <span class="chip-t on">Open now</span><span class="chip-t">&lt; 1 mi</span><span class="chip-t">Top rated</span>
+          </div>
+          <div class="sect"><h2>Near you</h2><a href="#">Map</a></div>
+
+          <div class="cafe-card">
+            <div class="thumb th-1"></div>
+            <div class="cafe-info">
+              <h3>Sunset Brew</h3>
+              <div class="meta-line">0.4 mi &middot; 7901 Sunset Blvd</div>
+              <div class="stat-line">
+                <span class="rate"><svg class="ic fill" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.5 1.1 6.3L12 17.4l-5.7 2.9 1.1-6.3L2.8 9.5l6.4-.9z"/></svg>4.6</span>
+                <span class="ready">Ready in 8 min</span>
+                <span class="openmark">Open</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="cafe-card">
+            <div class="thumb th-2"></div>
+            <div class="cafe-info">
+              <h3>Highland Roasters</h3>
+              <div class="meta-line">1.1 mi &middot; 5715 N Figueroa St</div>
+              <div class="stat-line">
+                <span class="rate"><svg class="ic fill" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.5 1.1 6.3L12 17.4l-5.7 2.9 1.1-6.3L2.8 9.5l6.4-.9z"/></svg>4.4</span>
+                <span class="ready">Ready in 12 min</span>
+                <span class="openmark">Open</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="cafe-card">
+            <div class="thumb th-3"></div>
+            <div class="cafe-info">
+              <h3>Venice Bean</h3>
+              <div class="meta-line">2.3 mi &middot; 1400 Abbot Kinney Blvd</div>
+              <div class="stat-line">
+                <span class="rate"><svg class="ic fill" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.5 1.1 6.3L12 17.4l-5.7 2.9 1.1-6.3L2.8 9.5l6.4-.9z"/></svg>4.8</span>
+                <span class="ready">Ready in 10 min</span>
+                <span class="openmark">Open</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab on"><svg class="ic" viewBox="0 0 24 24"><path d="m3.5 10.5 8.5-7 8.5 7"/><path d="M6 9.5V20h12V9.5"/></svg><span>Explore</span></div>
+          <div class="tab"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.2-4.2"/></svg><span>Search</span></div>
+          <div class="tab"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h12v18l-2-1.4L14 21l-2-1.4L10 21l-2-1.4L6 21z"/><path d="M9.5 8h5M9.5 12h5"/></svg><span>Orders</span></div>
+          <div class="tab"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span>Profile</span></div>
+        </div>
+        <div class="homebar" style="background:#F4F1E7"></div>
+      </div></div>
+      <span class="screen-label">Explore</span>
+    </div>
+
+    <!-- ============ SCREEN 2: CAFE MENU ============ -->
+    <div class="phone-col">
+      <div class="device"><div class="screen">
+        <div class="hero">
+          <div class="statusbar" style="color:#F4F1E7"><span>9:41</span><div class="island"></div><span class="sicons">
+            <svg viewBox="0 0 18 12"><rect y="7" width="3" height="5" rx="1"/><rect x="5" y="4.5" width="3" height="7.5" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" width="3" height="12" rx="1" opacity=".35"/></svg>
+            <svg viewBox="0 0 16 12"><path d="M8 11.6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/><path d="M3.6 7.2a6.2 6.2 0 0 1 8.8 0L11 8.6a4.2 4.2 0 0 0-6 0z"/><path d="M.8 4.4a10.2 10.2 0 0 1 14.4 0L13.8 5.8a8.2 8.2 0 0 0-11.6 0z"/></svg>
+            <svg viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.2" y="2.2" width="14" height="7.6" rx="2"/><path d="M23.5 4.2v3.6c1-.3 1.5-1 1.5-1.8s-.5-1.5-1.5-1.8z" opacity=".4"/></svg>
+          </span></div>
+          <div class="nav-btns">
+            <div class="round-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M14.5 5 7.5 12l7 7"/></svg></div>
+            <div class="round-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 20.5C7 16.5 3.5 13.4 3.5 9.7A4.4 4.4 0 0 1 8 5.3c1.7 0 3.2.9 4 2.3a4.7 4.7 0 0 1 4-2.3 4.4 4.4 0 0 1 4.5 4.4c0 3.7-3.5 6.8-8.5 10.8z"/></svg></div>
+          </div>
+        </div>
+        <div class="detail-card">
+          <h1>Highland Roasters</h1>
+          <div class="detail-meta">4.4 ★ (96)<span class="sep">/</span>1.1 mi<span class="sep">/</span>Open til 6 PM</div>
+          <div class="pickup-pill"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Pickup 10&ndash;12 min</div>
+          <div class="cat-chips">
+            <span class="chip-t on">Espresso</span><span class="chip-t">Filter</span><span class="chip-t">Pastry</span><span class="chip-t">Food</span>
+          </div>
+
+          <div class="menu-sec">Espresso</div>
+          <div class="item"><div class="item-info"><h4>Oat Milk Latte</h4><p>Double shot. Oat. No nonsense.</p></div><span class="price">$5.75</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="item"><div class="item-info"><h4>Cappuccino</h4><p>Dry foam, dusted</p></div><span class="price">$5.25</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="item"><div class="item-info"><h4>Cortado</h4><p>4 oz. In and out.</p></div><span class="price">$4.75</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+
+          <div class="menu-sec">Filter + Food</div>
+          <div class="item"><div class="item-info"><h4>Pour Over</h4><p>Single origin &middot; rotates weekly</p></div><span class="price">$5.50</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="item"><div class="item-info"><h4>Breakfast Burrito</h4><p>Egg, cheddar, hash, salsa roja</p></div><span class="price">$9.50</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="item" style="border-bottom:none"><div class="item-info"><h4>Almond Croissant</h4><p>Twice-baked, heavy on the frangipane</p></div><span class="price">$4.95</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+
+          <div class="cart-bar"><span>2 items &middot; View order</span><span>$15.00</span></div>
+        </div>
+        <div class="homebar"></div>
+      </div></div>
+      <span class="screen-label">Cafe menu</span>
+    </div>
+
+    <!-- ============ SCREEN 3: CHECKOUT ============ -->
+    <div class="phone-col">
+      <div class="device"><div class="screen">
+        <div class="statusbar"><span>9:41</span><div class="island"></div><span class="sicons">
+          <svg viewBox="0 0 18 12"><rect y="7" width="3" height="5" rx="1"/><rect x="5" y="4.5" width="3" height="7.5" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" width="3" height="12" rx="1" opacity=".35"/></svg>
+          <svg viewBox="0 0 16 12"><path d="M8 11.6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/><path d="M3.6 7.2a6.2 6.2 0 0 1 8.8 0L11 8.6a4.2 4.2 0 0 0-6 0z"/><path d="M.8 4.4a10.2 10.2 0 0 1 14.4 0L13.8 5.8a8.2 8.2 0 0 0-11.6 0z"/></svg>
+          <svg viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.2" y="2.2" width="14" height="7.6" rx="2"/><path d="M23.5 4.2v3.6c1-.3 1.5-1 1.5-1.8s-.5-1.5-1.5-1.8z" opacity=".4"/></svg>
+        </span></div>
+        <div class="content">
+          <div class="co-head">
+            <div class="back"><svg class="ic" viewBox="0 0 24 24"><path d="M14.5 5 7.5 12l7 7"/></svg></div>
+            <h1>Checkout</h1>
+          </div>
+
+          <div class="co-card">
+            <div class="pickup-row">
+              <div class="badge-ic"><svg class="ic" viewBox="0 0 24 24" style="width:20px;height:20px"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div>
+              <div><h3>Pickup — Highland Roasters</h3><p>5715 N Figueroa St &middot; Ready in ~10 min</p></div>
+            </div>
+          </div>
+
+          <div class="co-card">
+            <h2>Your order</h2>
+            <div class="o-item"><span><span class="qty">1&times;</span>Pour Over</span><span class="pr">$5.50</span></div>
+            <div class="o-item"><span><span class="qty">1&times;</span>Breakfast Burrito</span><span class="pr">$9.50</span></div>
+          </div>
+
+          <div class="note-field"><svg class="ic" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M4 20l1.2-4.2L16.4 4.6a2.1 2.1 0 0 1 3 3L8.2 18.8z"/></svg>Note for the counter&hellip;</div>
+
+          <div class="co-card">
+            <div class="tip-title">Tip the crew</div>
+            <div class="tip-sub">Goes straight to the bar. No middleman.</div>
+            <div class="tip-opts">
+              <span class="tip">No tip</span><span class="tip">10%</span><span class="tip">15%</span><span class="tip on">20%</span>
+            </div>
+          </div>
+
+          <div class="co-card">
+            <div class="sum-row"><span>Subtotal</span><span>$15.00</span></div>
+            <div class="sum-row"><span>Tip</span><span>$3.00</span></div>
+            <div class="sum-row total"><span>Total</span><span>$18.00</span></div>
+          </div>
+
+          <div class="pay-btn">Pay $18.00</div>
+          <p class="pay-note">No line. No wait. Grab &amp; go.</p>
+        </div>
+        <div class="homebar"></div>
+      </div></div>
+      <span class="screen-label">Checkout</span>
+    </div>
+
+  </section>
+</div>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="BREAK — Heavy Pour logo">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&amp;display=swap');
+    text { font-family: 'Archivo Black', 'Arial Black', sans-serif; }
+  </style>
+  <!-- Tile: the wordmark literally broken in half -->
+  <rect x="6" y="6" width="188" height="188" fill="#D8F34F" stroke="#141414" stroke-width="10"/>
+  <text x="100" y="88" font-size="62" text-anchor="middle" fill="#141414" letter-spacing="2">BRE</text>
+  <!-- the crack -->
+  <path d="M22 103h38l11-13 13 26 11-13h83" fill="none" stroke="#141414" stroke-width="7" stroke-linejoin="round"/>
+  <text x="100" y="172" font-size="62" text-anchor="middle" fill="#141414" letter-spacing="2">AK.</text>
+</svg>

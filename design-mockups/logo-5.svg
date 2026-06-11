@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 200" role="img" aria-label="BREAK — After Hours logo">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Marcellus&amp;display=swap');
+    text { font-family: 'Marcellus', Georgia, serif; }
+  </style>
+  <!-- dark plaque so the mark reads on any background -->
+  <rect width="620" height="200" rx="24" fill="#100D0A"/>
+  <!-- Mark: latte from above — the crema crescent, last cup of the night -->
+  <circle cx="100" cy="100" r="58" fill="none" stroke="#D5A04F" stroke-width="3"/>
+  <circle cx="100" cy="100" r="44" fill="none" stroke="#A9683A" stroke-width="1.5" opacity="0.6"/>
+  <path d="M100 58a42 42 0 1 0 0 84 60 60 0 0 1 0-84z" fill="#D5A04F"/>
+  <!-- Wordmark -->
+  <text x="196" y="110" font-size="58" letter-spacing="16" fill="#EFE3CF">BREAK</text>
+  <text x="199" y="148" font-size="15" letter-spacing="7" fill="#D5A04F">AFTER HOURS · LOS ANGELES</text>
+</svg>

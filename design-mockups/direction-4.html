@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BREAK — Direction 4 · The Regular</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fugaz+One&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#F7E8C9; color:#221F1A; font-family:'Rubik',sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#D62F2F; text-decoration:none; font-weight:600; }
+  .wrap { max-width:1400px; margin:0 auto; padding:48px 36px 96px; }
+
+  .checker { background-image:
+    linear-gradient(45deg,#221F1A 25%,transparent 25%,transparent 75%,#221F1A 75%),
+    linear-gradient(45deg,#221F1A 25%,transparent 25%,transparent 75%,#221F1A 75%);
+    background-size:20px 20px; background-position:0 0,10px 10px; background-color:#FFF4DF; }
+
+  .crumb { font-size:13px; }
+  .crumb a:hover { text-decoration:underline; }
+  .dir-head { margin:28px 0 40px; }
+  .dir-head .kicker { display:inline-block; font-size:12px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; background:#D62F2F; color:#FFF4DF; padding:6px 14px; border-radius:999px; transform:rotate(-1deg); }
+  .dir-head h1 { font-family:'Fugaz One',cursive; font-size:58px; margin:16px 0 12px; color:#D62F2F; text-shadow:3px 3px 0 #F2B33D; }
+  .dir-head p { font-size:17px; line-height:1.6; color:#5b554a; max-width:680px; }
+
+  .brand-grid { display:grid; grid-template-columns:1.15fr .9fr 1fr; gap:20px; align-items:stretch; }
+  @media (max-width:1100px){ .brand-grid { grid-template-columns:1fr; } }
+  .panel { background:#FFF8EA; border:2.5px solid #221F1A; border-radius:20px; padding:28px; box-shadow:5px 5px 0 #E5B96F; }
+  .panel h2 { font-family:'Fugaz One',cursive; font-size:14px; letter-spacing:.1em; text-transform:uppercase; color:#D62F2F; margin-bottom:20px; }
+  .logo-stage { display:flex; align-items:center; justify-content:center; min-height:240px; background:#FFF1D8; border:2px dashed #D9B97E; border-radius:14px; padding:24px; }
+  .logo-stage svg { width:100%; max-width:300px; height:auto; }
+  .logo-note { font-size:13px; color:#5b554a; margin-top:14px; line-height:1.55; }
+
+  .swatches { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  .swatch .chip { height:64px; border-radius:12px; border:2.5px solid #221F1A; }
+  .swatch .name { font-size:13px; font-weight:700; margin-top:8px; }
+  .swatch .hex { font-size:12px; color:#8a8273; letter-spacing:.04em; }
+
+  .type-row { padding:16px 0; border-bottom:2px dashed #E3CB9D; }
+  .type-row:last-child { border-bottom:none; }
+  .type-row .label { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#8a8273; font-weight:700; margin-bottom:6px; }
+  .type-row .sample-display { font-family:'Fugaz One',cursive; font-size:28px; color:#D62F2F; }
+  .type-row .sample-body { font-size:16px; font-weight:500; }
+  .type-row .meta { font-size:12.5px; color:#8a8273; margin-top:4px; }
+
+  .phones-head { margin:64px 0 28px; }
+  .phones-head h2 { font-family:'Fugaz One',cursive; font-size:34px; color:#D62F2F; }
+  .phones-head p { color:#5b554a; margin-top:6px; font-size:15px; }
+  .phones { display:flex; flex-wrap:wrap; gap:44px; justify-content:center; }
+  .phone-col { display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .phone-col .screen-label { font-size:13px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#8a8273; }
+
+  .device { background:#221F1A; border-radius:64px; padding:11px; box-shadow:0 24px 44px -18px rgba(34,31,26,.45); }
+  .screen { width:390px; height:844px; border-radius:54px; overflow:hidden; position:relative; background:#FFF4DF; display:flex; flex-direction:column; }
+  .statusbar { height:54px; flex:none; display:flex; align-items:flex-end; justify-content:space-between; padding:0 30px 6px; font-size:15px; font-weight:700; color:#221F1A; position:relative; z-index:5; }
+  .island { position:absolute; top:12px; left:50%; transform:translateX(-50%); width:122px; height:35px; background:#15130F; border-radius:18px; }
+  .sicons { display:flex; align-items:center; gap:6px; }
+  .sicons svg { height:11.5px; width:auto; fill:currentColor; }
+  .homebar { position:absolute; bottom:9px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:3px; background:#221F1A; opacity:.85; z-index:30; }
+
+  .ic { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+  .ic.fill { fill:currentColor; stroke:none; }
+
+  .content { flex:1; overflow:hidden; display:flex; flex-direction:column; padding:8px 20px 0; }
+
+  /* ---------- explore ---------- */
+  .checkerline { height:14px; flex:none; background-image:linear-gradient(45deg,#221F1A 25%,transparent 25%,transparent 75%,#221F1A 75%),linear-gradient(45deg,#221F1A 25%,transparent 25%,transparent 75%,#221F1A 75%); background-size:14px 14px; background-position:0 0,7px 7px; background-color:#FFF4DF; border-bottom:2.5px solid #221F1A; }
+  .greet { margin:10px 2px 16px; }
+  .greet .date { font-size:11.5px; font-weight:700; letter-spacing:.18em; color:#3E8E72; text-transform:uppercase; }
+  .greet h1 { font-family:'Fugaz One',cursive; font-size:30px; color:#D62F2F; margin-top:5px; }
+  .greet .sub { font-size:14px; font-weight:500; color:#5b554a; margin-top:5px; }
+  .search-row { display:flex; gap:10px; }
+  .search { flex:1; display:flex; align-items:center; gap:10px; background:#fff; border:2.5px solid #221F1A; border-radius:999px; padding:11px 16px; color:#8a8273; font-size:14px; font-weight:500; }
+  .filter-btn { width:47px; height:47px; flex:none; border-radius:999px; background:#D62F2F; border:2.5px solid #221F1A; color:#FFF4DF; display:flex; align-items:center; justify-content:center; box-shadow:2.5px 2.5px 0 #221F1A; }
+  .chips { display:flex; gap:8px; margin:14px 0 2px; }
+  .chip-t { font-size:12px; font-weight:700; padding:7px 13px; border-radius:999px; border:2px solid #221F1A; color:#221F1A; background:#fff; white-space:nowrap; }
+  .chip-t.on { background:#F2B33D; box-shadow:2px 2px 0 #221F1A; }
+  .sect { display:flex; align-items:center; justify-content:space-between; margin:16px 2px 12px; }
+  .sect h2 { font-family:'Fugaz One',cursive; font-size:19px; color:#221F1A; }
+  .sect a { font-size:13px; }
+  .cafe-card { display:flex; flex-direction:column; background:#fff; border:2.5px solid #221F1A; border-radius:16px; margin-bottom:13px; overflow:hidden; box-shadow:3.5px 3.5px 0 #221F1A; position:relative; }
+  .awning { height:46px; border-bottom:2.5px solid #221F1A; }
+  .aw-1 { background:repeating-linear-gradient(90deg,#D62F2F 0 22px,#FFF4DF 22px 44px); }
+  .aw-2 { background:repeating-linear-gradient(90deg,#3E8E72 0 22px,#FFF4DF 22px 44px); }
+  .aw-3 { background:repeating-linear-gradient(90deg,#F2B33D 0 22px,#FFF4DF 22px 44px); }
+  .cafe-body { display:flex; align-items:center; gap:10px; padding:11px 14px 12px; }
+  .cafe-info { flex:1; min-width:0; }
+  .cafe-info h3 { font-family:'Fugaz One',cursive; font-size:17px; }
+  .meta-line { font-size:12px; font-weight:500; color:#5b554a; margin-top:3px; }
+  .stat-line { display:flex; align-items:center; gap:8px; margin-top:7px; }
+  .rate { display:flex; align-items:center; gap:4px; font-size:12.5px; font-weight:700; }
+  .rate .ic { width:13px; height:13px; color:#F2B33D; }
+  .ready-badge { font-family:'Fugaz One',cursive; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; background:#3E8E72; color:#FFF4DF; border:2px solid #221F1A; padding:4px 9px; border-radius:999px; transform:rotate(-2deg); }
+  .openmark { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#3E8E72; }
+
+  .tabbar { flex:none; height:86px; background:#D62F2F; border-top:2.5px solid #221F1A; display:flex; padding:11px 14px 25px; }
+  .tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; color:rgba(255,244,223,.55); }
+  .tab span { font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+  .tab.on { color:#FFF4DF; }
+  .tab .ic { width:21px; height:21px; }
+
+  /* ---------- cafe detail ---------- */
+  .hero { height:200px; flex:none; background:repeating-linear-gradient(90deg,#D62F2F 0 34px,#FFF4DF 34px 68px); position:relative; border-bottom:2.5px solid #221F1A; }
+  .hero .nav-btns { position:absolute; top:62px; left:18px; right:18px; display:flex; justify-content:space-between; }
+  .round-btn { width:40px; height:40px; border-radius:999px; background:#FFF4DF; border:2.5px solid #221F1A; color:#221F1A; display:flex; align-items:center; justify-content:center; box-shadow:2.5px 2.5px 0 #221F1A; }
+  .hero .name-board { position:absolute; left:50%; bottom:-30px; transform:translateX(-50%) rotate(-1.5deg); background:#221F1A; color:#FFF4DF; font-family:'Fugaz One',cursive; font-size:21px; padding:11px 26px; border-radius:12px; white-space:nowrap; box-shadow:3px 3px 0 #F2B33D; }
+  .detail-card { background:#FFF4DF; padding:44px 20px 0; flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; }
+  .detail-meta { display:flex; justify-content:center; align-items:center; gap:7px; font-size:13px; font-weight:600; color:#5b554a; }
+  .detail-meta b { color:#221F1A; font-weight:700; display:flex; align-items:center; gap:4px; }
+  .detail-meta .ic { width:13px; height:13px; color:#F2B33D; }
+  .dot { width:3px; height:3px; border-radius:99px; background:#C9B68C; }
+  .pickup-pill { display:flex; align-items:center; gap:7px; justify-content:center; margin:11px auto 0; background:#3E8E72; border:2.5px solid #221F1A; color:#FFF4DF; font-family:'Fugaz One',cursive; font-size:12px; letter-spacing:.05em; text-transform:uppercase; padding:8px 16px; border-radius:999px; width:fit-content; box-shadow:2.5px 2.5px 0 #221F1A; }
+  .pickup-pill .ic { width:14px; height:14px; }
+  .cat-chips { display:flex; gap:8px; margin:16px 0 0; justify-content:center; }
+  .menu-sec { font-family:'Fugaz One',cursive; font-size:16px; color:#D62F2F; margin:16px 0 6px; display:flex; align-items:center; gap:10px; }
+  .menu-sec::after { content:""; flex:1; border-top:2px dashed #D9B97E; }
+  .item { display:flex; align-items:center; gap:12px; padding:10.5px 0; border-bottom:2px dashed #EBD9B4; }
+  .item-info { flex:1; min-width:0; }
+  .item-info h4 { font-size:14.5px; font-weight:700; }
+  .item-info p { font-size:12px; font-weight:500; color:#8a8273; margin-top:2px; }
+  .price { font-size:14px; font-weight:700; }
+  .add-btn { width:32px; height:32px; flex:none; border-radius:999px; background:#D62F2F; border:2px solid #221F1A; color:#FFF4DF; display:flex; align-items:center; justify-content:center; box-shadow:2px 2px 0 #221F1A; }
+  .add-btn .ic { width:15px; height:15px; stroke-width:2.4; }
+  .cart-bar { position:absolute; left:16px; right:16px; bottom:24px; background:#221F1A; color:#FFF4DF; border-radius:999px; padding:15px 22px; display:flex; justify-content:space-between; align-items:center; font-family:'Fugaz One',cursive; font-size:14px; letter-spacing:.04em; text-transform:uppercase; box-shadow:3.5px 3.5px 0 #F2B33D; }
+
+  /* ---------- checkout: ticket ---------- */
+  .co-head { display:flex; align-items:center; gap:12px; padding:8px 2px 12px; }
+  .co-head .back { width:40px; height:40px; border-radius:999px; background:#fff; border:2.5px solid #221F1A; display:flex; align-items:center; justify-content:center; }
+  .co-head h1 { font-family:'Fugaz One',cursive; font-size:21px; color:#D62F2F; }
+  .ticket { background:#fff; border:2.5px solid #221F1A; border-radius:16px; box-shadow:3.5px 3.5px 0 #221F1A; overflow:hidden; margin-bottom:13px; }
+  .ticket-head { background:#F2B33D; border-bottom:2.5px solid #221F1A; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; }
+  .ticket-head h2 { font-family:'Fugaz One',cursive; font-size:13px; letter-spacing:.06em; text-transform:uppercase; }
+  .ticket-head .num { font-size:12px; font-weight:700; }
+  .ticket-body { padding:12px 16px 14px; }
+  .pickup-row { display:flex; gap:13px; align-items:center; }
+  .pickup-row .badge-ic { width:42px; height:42px; flex:none; border-radius:999px; background:#FFF1D8; border:2px solid #221F1A; color:#D62F2F; display:flex; align-items:center; justify-content:center; }
+  .pickup-row h3 { font-size:14.5px; font-weight:700; }
+  .pickup-row p { font-size:12px; font-weight:500; color:#5b554a; margin-top:2px; }
+  .o-item { display:flex; justify-content:space-between; align-items:baseline; padding:8px 0; font-size:14px; font-weight:500; border-bottom:2px dashed #EBD9B4; }
+  .o-item:last-of-type { border-bottom:none; }
+  .o-item .qty { font-weight:700; color:#D62F2F; margin-right:8px; }
+  .o-item .pr { font-weight:700; }
+  .perf { position:relative; border-top:2.5px dashed #C9B68C; margin:0 10px; }
+  .perf::before,.perf::after { content:""; position:absolute; top:-9px; width:16px; height:16px; border-radius:99px; background:#FFF4DF; border:2.5px solid #221F1A; }
+  .perf::before { left:-21px; } .perf::after { right:-21px; }
+  .note-field { display:flex; align-items:center; gap:10px; background:#fff; border:2px dashed #C9B68C; border-radius:14px; padding:12px 15px; color:#8a8273; font-size:13px; font-weight:500; margin-bottom:13px; }
+  .tip-title { font-family:'Fugaz One',cursive; font-size:13.5px; letter-spacing:.04em; text-transform:uppercase; color:#221F1A; }
+  .tip-sub { font-size:12px; font-weight:500; color:#5b554a; margin:3px 0 11px; }
+  .tip-opts { display:flex; gap:8px; }
+  .tip { flex:1; text-align:center; font-size:13px; font-weight:700; padding:10px 0; border-radius:999px; border:2px solid #221F1A; background:#fff; }
+  .tip.on { background:#D62F2F; color:#FFF4DF; box-shadow:2px 2px 0 #221F1A; }
+  .sum-row { display:flex; justify-content:space-between; font-size:14px; font-weight:500; color:#5b554a; padding:4.5px 0; }
+  .sum-row.total { margin-top:6px; padding-top:10px; font-family:'Fugaz One',cursive; font-size:17px; color:#221F1A; }
+  .pay-btn { margin-top:2px; background:#D62F2F; border:2.5px solid #221F1A; color:#FFF4DF; border-radius:999px; padding:15px 0; text-align:center; font-family:'Fugaz One',cursive; font-size:16px; letter-spacing:.05em; text-transform:uppercase; box-shadow:3.5px 3.5px 0 #221F1A; }
+  .pay-note { text-align:center; font-size:11.5px; font-weight:600; color:#8a8273; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="crumb"><a href="index.html">&larr; All five directions</a></p>
+  <header class="dir-head">
+    <span class="kicker">Direction 4 of 5 · Retro Diner</span>
+    <h1>The Regular</h1>
+    <p>The 1962 counter diner, reborn as an app. Cherry red and malt cream, checkerboard trim, badges that look hand-lettered on the window. Orders print like kitchen tickets, pickup times come on enamel pins. Warm, loud, and impossible to mistake for another coffee app — you&rsquo;re not a user, you&rsquo;re a regular.</p>
+  </header>
+
+  <section class="brand-grid">
+    <div class="panel">
+      <h2>Logo</h2>
+      <div class="logo-stage">
+        <svg viewBox="0 0 360 248" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Break! diner badge logo">
+          <defs>
+            <pattern id="check4i" width="28" height="28" patternUnits="userSpaceOnUse">
+              <rect width="14" height="14" fill="#221F1A"/><rect x="14" y="14" width="14" height="14" fill="#221F1A"/>
+              <rect x="14" width="14" height="14" fill="#FFF4DF"/><rect y="14" width="14" height="14" fill="#FFF4DF"/>
+            </pattern>
+          </defs>
+          <circle cx="180" cy="106" r="100" fill="none" stroke="#F2B33D" stroke-width="24" stroke-dasharray="9 17"/>
+          <ellipse cx="180" cy="106" rx="156" ry="88" fill="#221F1A"/>
+          <ellipse cx="180" cy="106" rx="148" ry="80" fill="#D62F2F"/>
+          <ellipse cx="180" cy="106" rx="136" ry="69" fill="none" stroke="#FFF4DF" stroke-width="4" stroke-dasharray="1 9" stroke-linecap="round"/>
+          <text x="180" y="124" font-family="'Fugaz One',cursive" font-size="68" text-anchor="middle" fill="#FFF4DF" transform="rotate(-4 180 106)">Break!</text>
+          <text x="180" y="158" font-family="'Fugaz One',cursive" font-size="13" text-anchor="middle" fill="#FFE9C2" letter-spacing="4">ORDER AHEAD · NO LINE</text>
+          <rect x="110" y="204" width="140" height="28" fill="url(#check4i)" stroke="#221F1A" stroke-width="4"/>
+        </svg>
+      </div>
+      <p class="logo-note">A roadside diner badge: marquee-bulb ring, tilted &ldquo;Break!&rdquo; and a checker counter strip. The oval crops to a circle for the app icon and still reads at a glance.</p>
+    </div>
+    <div class="panel">
+      <h2>Palette</h2>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:#FFF4DF"></div><div class="name">Malt Cream</div><div class="hex">#FFF4DF</div></div>
+        <div class="swatch"><div class="chip" style="background:#D62F2F"></div><div class="name">Cherry</div><div class="hex">#D62F2F</div></div>
+        <div class="swatch"><div class="chip" style="background:#3E8E72"></div><div class="name">Booth Mint</div><div class="hex">#3E8E72</div></div>
+        <div class="swatch"><div class="chip" style="background:#F2B33D"></div><div class="name">Mustard</div><div class="hex">#F2B33D</div></div>
+        <div class="swatch"><div class="chip" style="background:#221F1A"></div><div class="name">Griddle</div><div class="hex">#221F1A</div></div>
+        <div class="swatch"><div class="chip checker"></div><div class="name">Checker Trim</div><div class="hex">Pattern</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Typography</h2>
+      <div class="type-row">
+        <div class="label">Display · Fugaz One</div>
+        <div class="sample-display">Order up, Nick!</div>
+        <div class="meta">Single weight — signs, badges, buttons, section heads</div>
+      </div>
+      <div class="type-row">
+        <div class="label">Text · Rubik</div>
+        <div class="sample-body">Ready in 8 min · 7901 Sunset Blvd</div>
+        <div class="meta">Regular 400, Medium 500, Bold 700 — menus, prices, UI</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="phones-head">
+    <h2>Screens</h2>
+    <p>Explore &middot; Cafe menu &middot; Checkout — rendered at iPhone 390&times;844.</p>
+  </div>
+
+  <section class="phones">
+
+    <!-- ============ SCREEN 1: EXPLORE ============ -->
+    <div class="phone-col">
+      <div class="device"><div class="screen">
+        <div class="statusbar"><span>9:41</span><div class="island"></div><span class="sicons">
+          <svg viewBox="0 0 18 12"><rect y="7" width="3" height="5" rx="1"/><rect x="5" y="4.5" width="3" height="7.5" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" width="3" height="12" rx="1" opacity=".35"/></svg>
+          <svg viewBox="0 0 16 12"><path d="M8 11.6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/><path d="M3.6 7.2a6.2 6.2 0 0 1 8.8 0L11 8.6a4.2 4.2 0 0 0-6 0z"/><path d="M.8 4.4a10.2 10.2 0 0 1 14.4 0L13.8 5.8a8.2 8.2 0 0 0-11.6 0z"/></svg>
+          <svg viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.2" y="2.2" width="14" height="7.6" rx="2"/><path d="M23.5 4.2v3.6c1-.3 1.5-1 1.5-1.8s-.5-1.5-1.5-1.8z" opacity=".4"/></svg>
+        </span></div>
+        <div class="content">
+          <div class="greet">
+            <p class="date">Thu · June 11 · Los Angeles</p>
+            <h1>Mornin&rsquo;, Nick!</h1>
+            <p class="sub">Counter&rsquo;s open. Regulars never wait in line.</p>
+          </div>
+          <div class="search-row">
+            <div class="search"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.2-4.2"/></svg>Search cafes or the menu&hellip;</div>
+            <div class="filter-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h8M18 7h2M4 17h4M14 17h6"/><circle cx="15" cy="7" r="2.4"/><circle cx="10" cy="17" r="2.4"/></svg></div>
+          </div>
+          <div class="chips">
+            <span class="chip-t on">Open now</span><span class="chip-t">Under 1 mi</span><span class="chip-t">Top rated</span>
+          </div>
+          <div class="sect"><h2>On the strip</h2><a href="#">Map view</a></div>
+
+          <div class="cafe-card">
+            <div class="awning aw-1"></div>
+            <div class="cafe-body">
+              <div class="cafe-info">
+                <h3>Sunset Brew</h3>
+                <div class="meta-line">0.4 mi &middot; 7901 Sunset Blvd</div>
+                <div class="stat-line">
+                  <span class="rate"><svg class="ic fill" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.5 1.1 6.3L12 17.4l-5.7 2.9 1.1-6.3L2.8 9.5l6.4-.9z"/></svg>4.6</span>
+                  <span class="openmark">Open</span>
+                </div>
+              </div>
+              <span class="ready-badge">Ready in 8 min</span>
+            </div>
+          </div>
+
+          <div class="cafe-card">
+            <div class="awning aw-2"></div>
+            <div class="cafe-body">
+              <div class="cafe-info">
+                <h3>Highland Roasters</h3>
+                <div class="meta-line">1.1 mi &middot; 5715 N Figueroa St</div>
+                <div class="stat-line">
+                  <span class="rate"><svg class="ic fill" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.5 1.1 6.3L12 17.4l-5.7 2.9 1.1-6.3L2.8 9.5l6.4-.9z"/></svg>4.4</span>
+                  <span class="openmark">Open</span>
+                </div>
+              </div>
+              <span class="ready-badge">Ready in 12 min</span>
+            </div>
+          </div>
+
+          <div class="cafe-card">
+            <div class="awning aw-3"></div>
+            <div class="cafe-body">
+              <div class="cafe-info">
+                <h3>Venice Bean</h3>
+                <div class="meta-line">2.3 mi &middot; 1400 Abbot Kinney Blvd</div>
+                <div class="stat-line">
+                  <span class="rate"><svg class="ic fill" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.5 1.1 6.3L12 17.4l-5.7 2.9 1.1-6.3L2.8 9.5l6.4-.9z"/></svg>4.8</span>
+                  <span class="openmark">Open</span>
+                </div>
+              </div>
+              <span class="ready-badge">Ready in 10 min</span>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab on"><svg class="ic" viewBox="0 0 24 24"><path d="m3.5 10.5 8.5-7 8.5 7"/><path d="M6 9.5V20h12V9.5"/></svg><span>Explore</span></div>
+          <div class="tab"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.2-4.2"/></svg><span>Search</span></div>
+          <div class="tab"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h12v18l-2-1.4L14 21l-2-1.4L10 21l-2-1.4L6 21z"/><path d="M9.5 8h5M9.5 12h5"/></svg><span>Orders</span></div>
+          <div class="tab"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span>Profile</span></div>
+        </div>
+        <div class="homebar" style="background:#FFF4DF"></div>
+      </div></div>
+      <span class="screen-label">Explore</span>
+    </div>
+
+    <!-- ============ SCREEN 2: CAFE MENU ============ -->
+    <div class="phone-col">
+      <div class="device"><div class="screen">
+        <div class="hero">
+          <div class="statusbar"><span>9:41</span><div class="island"></div><span class="sicons">
+            <svg viewBox="0 0 18 12"><rect y="7" width="3" height="5" rx="1"/><rect x="5" y="4.5" width="3" height="7.5" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" width="3" height="12" rx="1" opacity=".35"/></svg>
+            <svg viewBox="0 0 16 12"><path d="M8 11.6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/><path d="M3.6 7.2a6.2 6.2 0 0 1 8.8 0L11 8.6a4.2 4.2 0 0 0-6 0z"/><path d="M.8 4.4a10.2 10.2 0 0 1 14.4 0L13.8 5.8a8.2 8.2 0 0 0-11.6 0z"/></svg>
+            <svg viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.2" y="2.2" width="14" height="7.6" rx="2"/><path d="M23.5 4.2v3.6c1-.3 1.5-1 1.5-1.8s-.5-1.5-1.5-1.8z" opacity=".4"/></svg>
+          </span></div>
+          <div class="nav-btns">
+            <div class="round-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M14.5 5 7.5 12l7 7"/></svg></div>
+            <div class="round-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 20.5C7 16.5 3.5 13.4 3.5 9.7A4.4 4.4 0 0 1 8 5.3c1.7 0 3.2.9 4 2.3a4.7 4.7 0 0 1 4-2.3 4.4 4.4 0 0 1 4.5 4.4c0 3.7-3.5 6.8-8.5 10.8z"/></svg></div>
+          </div>
+          <div class="name-board">Sunset Brew</div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-meta">
+            <b><svg class="ic fill" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.5 1.1 6.3L12 17.4l-5.7 2.9 1.1-6.3L2.8 9.5l6.4-.9z"/></svg>4.6 (212)</b>
+            <span class="dot"></span><span>0.4 mi</span><span class="dot"></span><span>Open til 6 PM</span>
+          </div>
+          <div class="pickup-pill"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Pickup in 8&ndash;10 min</div>
+          <div class="cat-chips">
+            <span class="chip-t on">Espresso</span><span class="chip-t">Filter</span><span class="chip-t">Bakes</span><span class="chip-t">Grill</span>
+          </div>
+
+          <div class="menu-sec">Espresso</div>
+          <div class="item"><div class="item-info"><h4>Oat Milk Latte</h4><p>House espresso, oat milk, easy foam</p></div><span class="price">$5.75</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="item"><div class="item-info"><h4>Cappuccino</h4><p>Double shot, cocoa dust on request</p></div><span class="price">$5.25</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+
+          <div class="menu-sec">Filter</div>
+          <div class="item"><div class="item-info"><h4>Pour Over</h4><p>Single origin &middot; Ethiopia Guji</p></div><span class="price">$5.50</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+
+          <div class="menu-sec">Bakes &amp; grill</div>
+          <div class="item"><div class="item-info"><h4>Almond Croissant</h4><p>Twice-baked, frangipane center</p></div><span class="price">$4.95</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="item" style="border-bottom:none"><div class="item-info"><h4>Breakfast Burrito</h4><p>Egg, cheddar, crispy hash, salsa roja</p></div><span class="price">$9.50</span><div class="add-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+
+          <div class="cart-bar"><span>2 items &middot; View order</span><span>$15.25</span></div>
+        </div>
+        <div class="homebar"></div>
+      </div></div>
+      <span class="screen-label">Cafe menu</span>
+    </div>
+
+    <!-- ============ SCREEN 3: CHECKOUT ============ -->
+    <div class="phone-col">
+      <div class="device"><div class="screen">
+        <div class="statusbar"><span>9:41</span><div class="island"></div><span class="sicons">
+          <svg viewBox="0 0 18 12"><rect y="7" width="3" height="5" rx="1"/><rect x="5" y="4.5" width="3" height="7.5" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" width="3" height="12" rx="1" opacity=".35"/></svg>
+          <svg viewBox="0 0 16 12"><path d="M8 11.6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/><path d="M3.6 7.2a6.2 6.2 0 0 1 8.8 0L11 8.6a4.2 4.2 0 0 0-6 0z"/><path d="M.8 4.4a10.2 10.2 0 0 1 14.4 0L13.8 5.8a8.2 8.2 0 0 0-11.6 0z"/></svg>
+          <svg viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.2" y="2.2" width="14" height="7.6" rx="2"/><path d="M23.5 4.2v3.6c1-.3 1.5-1 1.5-1.8s-.5-1.5-1.5-1.8z" opacity=".4"/></svg>
+        </span></div>
+        <div class="content">
+          <div class="co-head">
+            <div class="back"><svg class="ic" viewBox="0 0 24 24"><path d="M14.5 5 7.5 12l7 7"/></svg></div>
+            <h1>Your ticket</h1>
+          </div>
+
+          <div class="ticket">
+            <div class="ticket-head"><h2>Order ticket</h2><span class="num">№ 1147</span></div>
+            <div class="ticket-body">
+              <div class="pickup-row">
+                <div class="badge-ic"><svg class="ic" viewBox="0 0 24 24" style="width:19px;height:19px"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div>
+                <div><h3>Pickup at Sunset Brew</h3><p>7901 Sunset Blvd &middot; Ready in ~8 min</p></div>
+              </div>
+            </div>
+            <div class="perf"></div>
+            <div class="ticket-body">
+              <div class="o-item"><span><span class="qty">1&times;</span>Breakfast Burrito</span><span class="pr">$9.50</span></div>
+              <div class="o-item"><span><span class="qty">1&times;</span>Oat Milk Latte</span><span class="pr">$5.75</span></div>
+            </div>
+          </div>
+
+          <div class="note-field"><svg class="ic" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M4 20l1.2-4.2L16.4 4.6a2.1 2.1 0 0 1 3 3L8.2 18.8z"/></svg>Anything for the kitchen? Extra salsa&hellip;</div>
+
+          <div class="ticket"><div class="ticket-body">
+            <div class="tip-title">Tip the counter</div>
+            <div class="tip-sub">Every cent lands in the staff jar</div>
+            <div class="tip-opts">
+              <span class="tip">No tip</span><span class="tip">10%</span><span class="tip on">15%</span><span class="tip">20%</span>
+            </div>
+          </div></div>
+
+          <div class="ticket"><div class="ticket-body">
+            <div class="sum-row"><span>Subtotal</span><span>$15.25</span></div>
+            <div class="sum-row"><span>Tip</span><span>$2.29</span></div>
+            <div class="sum-row total"><span>Total</span><span>$17.54</span></div>
+          </div></div>
+
+          <div class="pay-btn">Pay $17.54</div>
+          <p class="pay-note">We&rsquo;ll holler when it&rsquo;s ready — order № 1147.</p>
+        </div>
+        <div class="homebar"></div>
+      </div></div>
+      <span class="screen-label">Checkout</span>
+    </div>
+
+  </section>
+</div>
+</body>
+</html>

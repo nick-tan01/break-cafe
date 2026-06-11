@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 180" role="img" aria-label="BREAK — Golden Hour logo">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&amp;display=swap');
+    text { font-family: 'Fraunces', Georgia, 'Times New Roman', serif; font-weight: 600; }
+  </style>
+  <!-- Mark: sun rising over the cup — golden hour, taken slowly -->
+  <g>
+    <!-- sun rays -->
+    <g stroke="#C75B39" stroke-width="5" stroke-linecap="round">
+      <line x1="85" y1="46" x2="85" y2="30"/>
+      <line x1="108" y1="52.2" x2="116" y2="38.4"/>
+      <line x1="124.8" y1="69" x2="138.6" y2="61"/>
+      <line x1="62" y1="52.2" x2="54" y2="38.4"/>
+      <line x1="45.2" y1="69" x2="31.4" y2="61"/>
+    </g>
+    <!-- sun half-disc resting on the cup rim -->
+    <path d="M49 92a36 36 0 0 1 72 0z" fill="#E2A75E"/>
+    <!-- cup bowl -->
+    <path d="M43 100a42 34 0 0 0 84 0z" fill="#3B2A1D"/>
+    <!-- handle -->
+    <path d="M127 104a15 15 0 0 1 0 26" fill="none" stroke="#3B2A1D" stroke-width="7" stroke-linecap="round"/>
+    <!-- saucer -->
+    <rect x="57" y="142" width="56" height="7" rx="3.5" fill="#3B2A1D"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="186" y="120" font-size="96" letter-spacing="-2">
+    <tspan fill="#3B2A1D">break</tspan><tspan fill="#C75B39">.</tspan>
+  </text>
+</svg>
