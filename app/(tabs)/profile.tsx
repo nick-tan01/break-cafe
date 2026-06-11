@@ -1,9 +1,11 @@
 import { StyleSheet, View, Text, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+
+import { supabase } from '../../lib/supabase';
 
 interface MenuItem {
   id: string;
@@ -15,62 +17,116 @@ interface MenuItem {
 }
 
 interface FavoriteCafe {
-  id: string;
+  id: number;
   name: string;
-  image: string;
+  image: string | null;
   rating: number;
-  distance: string;
+  address: string;
 }
 
 interface RecentOrder {
-  id: string;
+  id: number;
   cafeName: string;
   date: string;
   total: number;
-  status: 'completed' | 'preparing' | 'ready' | 'cancelled';
+  status: string;
 }
-
-// Mock data for favorite cafes
-const FAVORITE_CAFES: FavoriteCafe[] = [
-  {
-    id: '1',
-    name: 'The Coffee House',
-    image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500',
-    rating: 4.5,
-    distance: '0.5 km away',
-  },
-  {
-    id: '2',
-    name: 'Bakery & Brew',
-    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=500',
-    rating: 4.8,
-    distance: '0.8 km away',
-  },
-];
-
-// Mock data for recent orders
-const RECENT_ORDERS: RecentOrder[] = [
-  {
-    id: '1',
-    cafeName: 'The Coffee House',
-    date: '2024-03-15',
-    total: 15.50,
-    status: 'completed',
-  },
-  {
-    id: '2',
-    cafeName: 'Bakery & Brew',
-    date: '2024-03-14',
-    total: 12.75,
-    status: 'completed',
-  },
-];
 
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isSignedIn, setIsSignedIn] = useState(true); // This will be replaced with actual auth state
+  const [isSignedIn, setIsSignedIn] = useState(true);
+  const [fullName, setFullName] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<FavoriteCafe[]>([]);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const loadProfile = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          if (isActive) setIsSignedIn(false);
+          return;
+        }
+        if (isActive) {
+          setIsSignedIn(true);
+          setEmail(user.email ?? null);
+        }
+
+        const [profileRes, favoritesRes, ordersRes] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('full_name, avatar_url')
+            .eq('id', user.id)
+            .maybeSingle(),
+          supabase
+            .from('favorites')
+            .select('cafe_id, cafes(name, address, avg_rating, profile_image_url)')
+            .eq('user_id', user.id),
+          supabase
+            .from('orders')
+            .select('order_id, status, total, created_at, cafes(name)')
+            .order('created_at', { ascending: false })
+            .limit(5),
+        ]);
+
+        if (!isActive) return;
+
+        if (profileRes.error) {
+          console.error('Error fetching profile:', profileRes.error);
+        } else if (profileRes.data) {
+          setFullName(profileRes.data.full_name ?? null);
+          setAvatarUrl(profileRes.data.avatar_url ?? null);
+        }
+
+        if (favoritesRes.error) {
+          console.error('Error fetching favorites:', favoritesRes.error);
+        } else {
+          setFavorites(
+            (favoritesRes.data ?? []).flatMap((row: any): FavoriteCafe[] => {
+              const cafe = Array.isArray(row.cafes) ? row.cafes[0] : row.cafes;
+              if (!cafe) return [];
+              return [{
+                id: row.cafe_id,
+                name: cafe.name,
+                image: cafe.profile_image_url,
+                rating: Number(cafe.avg_rating || 0),
+                address: cafe.address,
+              }];
+            })
+          );
+        }
+
+        if (ordersRes.error) {
+          console.error('Error fetching orders:', ordersRes.error);
+        } else {
+          setRecentOrders(
+            (ordersRes.data ?? []).map((row: any): RecentOrder => {
+              const cafe = Array.isArray(row.cafes) ? row.cafes[0] : row.cafes;
+              return {
+                id: row.order_id,
+                cafeName: cafe?.name ?? 'Unknown cafe',
+                date: row.created_at,
+                total: Number(row.total || 0),
+                status: row.status ?? '',
+              };
+            })
+          );
+        }
+      };
+
+      loadProfile();
+
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
 
   const handleSignOut = () => {
     Alert.alert(
@@ -78,20 +134,22 @@ export default function ProfileScreen() {
       'Are you sure you want to sign out?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Sign Out', 
-          style: 'destructive', 
-          onPress: () => {
-            // Here we'll add actual sign out logic
-            setIsSignedIn(false);
-            router.replace('/(auth)/sign-in');
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+              Alert.alert('Error', 'Could not sign out. Please try again.');
+            }
+            // The root layout's auth listener handles redirecting to sign-in.
           }
         },
       ]
     );
   };
 
-  const getStatusColor = (status: RecentOrder['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'preparing':
         return '#FFA500';
@@ -101,6 +159,8 @@ export default function ProfileScreen() {
         return '#666';
       case 'cancelled':
         return '#FF0000';
+      default:
+        return '#666';
     }
   };
 
@@ -230,14 +290,14 @@ export default function ProfileScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={[styles.header, { borderBottomColor: colorScheme === 'dark' ? '#333' : '#eee' }]}>
           <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=500' }}
+            source={{ uri: avatarUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=500' }}
             style={styles.profileImage}
           />
           <View style={styles.profileInfo}>
             <Text style={[styles.name, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-              John Doe
+              {fullName || email || ''}
             </Text>
-            <Text style={styles.email}>john.doe@example.com</Text>
+            <Text style={styles.email}>{email || ''}</Text>
             <TouchableOpacity 
               style={[
                 styles.editButton,
@@ -280,33 +340,45 @@ export default function ProfileScreen() {
               <Text style={styles.seeAllButton}>See All</Text>
             </TouchableOpacity>
           </View>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.favoritesScroll}
-          >
-            {FAVORITE_CAFES.map(cafe => (
-              <TouchableOpacity 
-                key={cafe.id}
-                style={[styles.favoriteCard, { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#fff' }]}
-                onPress={() => router.push(`/cafe/${cafe.id}`)}
-              >
-                <Image source={{ uri: cafe.image }} style={styles.favoriteImage} />
-                <View style={styles.favoriteInfo}>
-                  <Text style={[styles.favoriteName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-                    {cafe.name}
-                  </Text>
-                  <View style={styles.favoriteStats}>
-                    <View style={styles.favoriteRating}>
-                      <FontAwesome name="star" size={12} color="#FFD700" />
-                      <Text style={styles.favoriteRatingText}>{cafe.rating}</Text>
+          {favorites.length === 0 ? (
+            <Text style={styles.emptyText}>No favorites yet</Text>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.favoritesScroll}
+            >
+              {favorites.map(cafe => (
+                <TouchableOpacity
+                  key={cafe.id}
+                  style={[styles.favoriteCard, { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#fff' }]}
+                  onPress={() => router.push(`/cafe/${cafe.id}`)}
+                >
+                  {cafe.image ? (
+                    <Image source={{ uri: cafe.image }} style={styles.favoriteImage} />
+                  ) : (
+                    <View style={[styles.favoriteImage, styles.favoriteImagePlaceholder]}>
+                      <FontAwesome name="coffee" size={32} color="#999" />
                     </View>
-                    <Text style={styles.favoriteDistance}>{cafe.distance}</Text>
+                  )}
+                  <View style={styles.favoriteInfo}>
+                    <Text style={[styles.favoriteName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
+                      {cafe.name}
+                    </Text>
+                    <View style={styles.favoriteStats}>
+                      <View style={styles.favoriteRating}>
+                        <FontAwesome name="star" size={12} color="#FFD700" />
+                        <Text style={styles.favoriteRatingText}>{cafe.rating}</Text>
+                      </View>
+                      <Text style={[styles.favoriteDistance, { flex: 1 }]} numberOfLines={1}>
+                        {cafe.address}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
         </View>
 
         <View style={[styles.section, { borderBottomColor: colorScheme === 'dark' ? '#333' : '#eee' }]}>
@@ -318,30 +390,34 @@ export default function ProfileScreen() {
               <Text style={styles.seeAllButton}>See All</Text>
             </TouchableOpacity>
           </View>
-          {RECENT_ORDERS.map(order => (
-            <TouchableOpacity 
-              key={order.id}
-              style={[styles.orderCard, { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#fff' }]}
-              onPress={() => router.push(`/order/${order.id}`)}
-            >
-              <View style={styles.orderInfo}>
-                <Text style={[styles.orderCafeName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-                  {order.cafeName}
-                </Text>
-                <Text style={styles.orderDate}>
-                  {new Date(order.date).toLocaleDateString()}
-                </Text>
-              </View>
-              <View style={styles.orderDetails}>
-                <Text style={styles.orderTotal}>${order.total.toFixed(2)}</Text>
-                <View style={[styles.orderStatus, { backgroundColor: getStatusColor(order.status) }]}>
-                  <Text style={styles.orderStatusText}>
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+          {recentOrders.length === 0 ? (
+            <Text style={styles.emptyText}>No orders yet</Text>
+          ) : (
+            recentOrders.map(order => (
+              <TouchableOpacity
+                key={order.id}
+                style={[styles.orderCard, { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#fff' }]}
+                onPress={() => router.push(`/order/${order.id}`)}
+              >
+                <View style={styles.orderInfo}>
+                  <Text style={[styles.orderCafeName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
+                    {order.cafeName}
+                  </Text>
+                  <Text style={styles.orderDate}>
+                    {new Date(order.date).toLocaleDateString()}
                   </Text>
                 </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+                <View style={styles.orderDetails}>
+                  <Text style={styles.orderTotal}>${order.total.toFixed(2)}</Text>
+                  <View style={[styles.orderStatus, { backgroundColor: getStatusColor(order.status) }]}>
+                    <Text style={styles.orderStatusText}>
+                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
         <View style={styles.menuContainer}>
@@ -505,6 +581,16 @@ const styles = StyleSheet.create({
   favoriteImage: {
     width: '100%',
     height: 120,
+  },
+  favoriteImagePlaceholder: {
+    backgroundColor: '#e0e0e0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#666',
+    paddingVertical: 8,
   },
   favoriteInfo: {
     padding: 12,

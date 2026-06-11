@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { AntDesign } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
-import { TokenResponse } from 'expo-auth-session';
 
 import { supabase } from '../../lib/supabase';
 
@@ -29,16 +28,29 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
+  // Native flow: Google returns an ID token via the app's own URL scheme
+  // (the auth.expo.io proxy is deprecated), and the token is exchanged for
+  // a Supabase session. Requires a dev build — Expo Go can't do this flow.
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    redirectUri: process.env.EXPO_PUBLIC_GOOGLE_REDIRECT_URI,
   });
 
   useEffect(() => {
     if (response?.type === 'success') {
-      console.log('Sign in successful');
-      router.replace('/(tabs)');
+      const idToken = response.params.id_token;
+      if (!idToken) {
+        Alert.alert('Error', 'Google did not return an ID token');
+        return;
+      }
+      supabase.auth
+        .signInWithIdToken({ provider: 'google', token: idToken })
+        .then(({ error }) => {
+          if (error) {
+            Alert.alert('Error', error.message);
+          }
+          // On success the root layout's auth listener handles navigation.
+        });
     } else if (response?.type === 'error') {
       console.error('Sign in error:', response.error);
       Alert.alert('Error', 'Could not sign in with Google');

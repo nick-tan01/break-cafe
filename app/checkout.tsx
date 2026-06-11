@@ -1,88 +1,118 @@
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, TextInput, Platform, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { useState } from 'react';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
+import { useCart } from '../lib/cart';
+import { supabase } from '../lib/supabase';
 
-interface OrderItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
+const TIP_OPTIONS = [0, 10, 15, 20];
 
 export default function CheckoutScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
   const colorScheme = useColorScheme();
-  const [pickupTime, setPickupTime] = useState('15'); // Default 15 minutes
   const [notes, setNotes] = useState('');
+  const [tipPercent, setTipPercent] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  // Parse the cart items from params
-  const cartItemsStr = params.cartItems as string;
-  const cafeName = params.cafeName as string;
-  const cafeImage = params.cafeImage as string;
-  
-  const cartItems: OrderItem[] = cartItemsStr ? JSON.parse(decodeURIComponent(cartItemsStr)) : [];
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.1; // 10% tax
-  const total = subtotal + tax;
+  const { cafeId, cafeName, items, subtotal, clearCart } = useCart();
+
+  const tip = Number((Number(subtotal) * tipPercent / 100).toFixed(2));
+  const total = Number((Number(subtotal) + tip).toFixed(2));
 
   const processOrder = async () => {
     if (isProcessing) return;
-    
+    if (cafeId == null || items.length === 0) return;
+
     setIsProcessing(true);
     try {
-      // Generate a unique order ID
-      const orderId = `order_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-      
-      // Current date and estimated pickup time
-      const now = new Date();
-      const pickupTimeDate = new Date(now.getTime() + parseInt(pickupTime) * 60000);
-      const pickupTimeStr = pickupTimeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
-      // Create order object
-      const order = {
-        id: orderId,
-        cafeName,
-        cafeImage,
-        items: cartItems,
-        total,
-        status: 'preparing',
-        date: now.toISOString().split('T')[0],
-        pickupTime: pickupTimeStr,
-        notes
-      };
-      
-      // Get existing orders or initialize empty array
-      const existingOrdersStr = await AsyncStorage.getItem('orders');
-      const existingOrders = existingOrdersStr ? JSON.parse(existingOrdersStr) : [];
-      
-      // Add new order to array
-      const updatedOrders = [order, ...existingOrders];
-      
-      // Save updated orders
-      await AsyncStorage.setItem('orders', JSON.stringify(updatedOrders));
-      
-      // Navigate to order confirmation screen with the order ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert('Order failed', 'You need to be signed in to place an order.');
+        return;
+      }
+
+      const { data: orderRow, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          cafe_id: cafeId,
+          status: 'pending',
+          notes: notes.trim() ? notes.trim() : null,
+          subtotal,
+          tip,
+          total,
+        })
+        .select('order_id')
+        .single();
+
+      if (orderError || !orderRow) {
+        Alert.alert('Order failed', 'There was an error placing your order. Please try again.');
+        return;
+      }
+
+      const orderId = orderRow.order_id as number;
+
+      const { error: itemsError } = await supabase.from('order_items').insert(
+        items.map((item) => ({
+          order_id: orderId,
+          menu_item_id: item.menuItemId,
+          quantity: item.quantity,
+          unit_price: item.price,
+          customizations: item.customizations ?? null,
+        }))
+      );
+
+      if (itemsError) {
+        Alert.alert('Order failed', 'There was an error saving your order items. Please try again.');
+        return;
+      }
+
+      clearCart();
+
       router.push({
         pathname: `/order-confirmation`,
-        params: { 
-          orderId,
-          pickupTime: pickupTimeStr
-        }
+        params: { order_id: String(orderId) },
       });
     } catch (error) {
-      console.error('Error saving order:', error);
-      alert('There was an error processing your order. Please try again.');
+      console.error('Error placing order:', error);
+      Alert.alert('Order failed', 'There was an error processing your order. Please try again.');
     } finally {
       setIsProcessing(false);
     }
   };
+
+  if (items.length === 0) {
+    return (
+      <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }]}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <FontAwesome name="arrow-left" size={20} color="#007AFF" />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
+            Checkout
+          </Text>
+        </View>
+        <View style={styles.emptyState}>
+          <FontAwesome name="shopping-basket" size={48} color="#666" />
+          <Text style={[styles.emptyStateTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
+            Your cart is empty
+          </Text>
+          <Text style={styles.emptyStateSubtitle}>
+            Add some items from a cafe to get started.
+          </Text>
+          <TouchableOpacity style={styles.emptyStateButton} onPress={() => router.back()}>
+            <Text style={styles.emptyStateButtonText}>Browse Cafes</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }]}>
@@ -102,10 +132,10 @@ export default function CheckoutScreen() {
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            Order Summary
+            Order Summary{cafeName ? ` — ${cafeName}` : ''}
           </Text>
-          {cartItems.map((item) => (
-            <View key={item.id} style={styles.orderItem}>
+          {items.map((item) => (
+            <View key={item.menuItemId} style={styles.orderItem}>
               <View style={styles.orderItemInfo}>
                 <Text style={[styles.orderItemName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
                   {item.name}
@@ -113,18 +143,18 @@ export default function CheckoutScreen() {
                 <Text style={styles.orderItemQuantity}>x{item.quantity}</Text>
               </View>
               <Text style={styles.orderItemPrice}>
-                ${(item.price * item.quantity).toFixed(2)}
+                ${(Number(item.price) * item.quantity).toFixed(2)}
               </Text>
             </View>
           ))}
           <View style={styles.divider} />
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
+            <Text style={styles.summaryValue}>${Number(subtotal).toFixed(2)}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Tax (10%)</Text>
-            <Text style={styles.summaryValue}>${tax.toFixed(2)}</Text>
+            <Text style={styles.summaryLabel}>Tip</Text>
+            <Text style={styles.summaryValue}>${tip.toFixed(2)}</Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total</Text>
@@ -134,19 +164,27 @@ export default function CheckoutScreen() {
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
+            Add a Tip
+          </Text>
+          <View style={styles.tipRow}>
+            {TIP_OPTIONS.map((pct) => (
+              <TouchableOpacity
+                key={pct}
+                style={[styles.tipOption, tipPercent === pct && styles.tipOptionSelected]}
+                onPress={() => setTipPercent(pct)}
+              >
+                <Text style={[styles.tipOptionText, tipPercent === pct && styles.tipOptionTextSelected]}>
+                  {pct === 0 ? 'No tip' : `${pct}%`}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
             Pickup Details
           </Text>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Pickup Time (minutes)</Text>
-            <TextInput
-              style={styles.input}
-              value={pickupTime}
-              onChangeText={setPickupTime}
-              keyboardType="numeric"
-              placeholder="15"
-              placeholderTextColor="#666"
-            />
-          </View>
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Special Instructions</Text>
             <TextInput
@@ -269,6 +307,32 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#007AFF',
   },
+  tipRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  tipOption: {
+    flex: 1,
+    paddingVertical: 10,
+    marginHorizontal: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  tipOptionSelected: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  tipOptionText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+  },
+  tipOptionTextSelected: {
+    color: '#fff',
+  },
   inputContainer: {
     marginBottom: 16,
   },
@@ -309,4 +373,33 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-}); 
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  emptyStateButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 8,
+  },
+  emptyStateButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});

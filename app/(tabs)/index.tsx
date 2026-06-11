@@ -1,4 +1,4 @@
-import { StyleSheet, FlatList, View, Text, TouchableOpacity, Image, Alert, Dimensions, Platform, TextInput, TouchableWithoutFeedback, Keyboard, Modal, Pressable } from 'react-native';
+import { StyleSheet, FlatList, View, Text, TouchableOpacity, Alert, Dimensions, Platform, TextInput, TouchableWithoutFeedback, Keyboard, Modal, Pressable } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { useEffect, useState, useRef } from 'react';
@@ -8,6 +8,8 @@ import MapView, { Marker, Callout } from 'react-native-maps';
 import React from 'react';
 
 import { supabase } from '../../lib/supabase';
+import { getDistanceInMiles } from '../../lib/distance';
+import CafeCard from '../../components/CafeCard';
 
 // Map component dimensions
 const { width, height } = Dimensions.get('window');
@@ -42,16 +44,6 @@ export default function ExploreScreen() {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [maxDistance, setMaxDistance] = useState(10);
   const mapRef = useRef<MapView>(null);
-
-  const getDistanceInMiles = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 3958.8;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2)**2 +
-              Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-              Math.sin(dLon/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  };
 
   useEffect(() => {
     (async () => {
@@ -132,27 +124,6 @@ export default function ExploreScreen() {
     })();
   }, [maxDistance, sortBy, showOnlyOpen]);
 
-  
-  const calculateDistance = (cafe: Cafe) => {
-    if (!location) return cafe.distance;
-  
-    const R = 3958.8; // Radius of Earth in miles
-    const lat1 = location.coords.latitude * Math.PI / 180;
-    const lat2 = cafe.coordinates.latitude * Math.PI / 180;
-    const deltaLat = (cafe.coordinates.latitude - location.coords.latitude) * Math.PI / 180;
-    const deltaLon = (cafe.coordinates.longitude - location.coords.longitude) * Math.PI / 180;
-  
-    const a = Math.sin(deltaLat / 2) ** 2 +
-              Math.cos(lat1) * Math.cos(lat2) *
-              Math.sin(deltaLon / 2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
-  
-    return distance < 1
-      ? `${Math.round(distance * 5280)} ft`
-      : `${distance.toFixed(1)} mi`;
-  };
-
   // Function to animate to user's location on the map
   const goToUserLocation = () => {
     if (!location || !mapRef.current) return;
@@ -166,23 +137,15 @@ export default function ExploreScreen() {
   };
 
   const renderCafeItem = ({ item }: { item: Cafe }) => (
-    <TouchableOpacity style={styles.cafeCard} onPress={() => router.push(`/cafe/${item.id}`)}>
-      <Image source={{ uri: item.image }} style={styles.cafeImage} />
-      <View style={styles.cafeInfo}>
-        <Text style={[styles.cafeName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>{item.name}</Text>
-        <Text style={styles.cafeAddress}>{item.address}</Text>
-        <View style={styles.cafeStats}>
-          <View style={styles.ratingContainer}>
-            <FontAwesome name="star" size={16} color="#FFD700" />
-            <Text style={styles.rating}>{item.rating}</Text>
-          </View>
-          <Text style={styles.distance}>{item.distance}</Text>
-          <View style={[styles.openStatus, { backgroundColor: item.isOpen ? '#4CAF50' : '#F44336' }]}>
-            <Text style={styles.openStatusText}>{item.isOpen ? 'Open' : 'Closed'}</Text>
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
+    <CafeCard
+      name={item.name}
+      address={item.address}
+      rating={item.rating}
+      isOpen={item.isOpen}
+      image={item.image}
+      distance={item.distance}
+      onPress={() => router.push(`/cafe/${item.id}`)}
+    />
   );
 
   return (
@@ -356,69 +319,6 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-  },
-  cafeCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cafeImage: {
-    width: 120,
-    height: 120,
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-  },
-  cafeInfo: {
-    flex: 1,
-    padding: 12,
-  },
-  cafeName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  cafeAddress: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
-  cafeStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  rating: {
-    marginLeft: 4,
-    fontSize: 14,
-    color: '#666',
-  },
-  distance: {
-    fontSize: 14,
-    color: '#666',
-    marginRight: 16,
-  },
-  openStatus: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  openStatusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
   },
   mapContainer: {
     flex: 1,

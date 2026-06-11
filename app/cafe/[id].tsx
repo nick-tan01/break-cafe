@@ -1,379 +1,155 @@
-import React, { StyleSheet, View, Text, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Alert,
+  ActivityIndicator,
+  useColorScheme,
+} from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { useColorScheme } from 'react-native';
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
-import { Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import { supabase } from '../../lib/supabase';
+import { useCart } from '../../lib/cart';
 
-interface Review {
-  id: string;
-  userId: string;
-  userName: string;
-  rating: number;
-  comment: string;
-  date: string;
+interface CafeHourRow {
+  cafe_id: number;
+  day_of_week: number; // 1 = Monday … 7 = Sunday
+  opening_time: string; // "HH:MM:SS"
+  closing_time: string; // "HH:MM:SS"
+  is_closed: boolean;
 }
 
-interface MenuItem {
-  id: string;
+interface MenuItemRow {
+  menu_item_id: number;
+  cafe_id: number;
   name: string;
-  description: string;
+  description: string | null;
   price: number;
-  category: string;
-  image?: string;
-  customization?: {
-    name: string;
-    options: { name: string; price: number }[];
-  }[];
+  category: string | null;
+  image_url: string | null;
+  is_available: boolean;
 }
 
-interface Cafe {
-  id: string;
+interface ReviewRow {
+  review_id: number;
+  cafe_id: number;
+  user_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
+interface CafeRow {
+  cafe_id: number;
   name: string;
   address: string;
-  rating: number;
-  distance: number;
-  image: string;
-  isOpen: boolean;
-  menu: MenuItem[];
-  reviews: Review[];
-  openingHours: {
-    [key: string]: { open: string; close: string };
-  };
-  specialOffers: {
-    id: string;
-    title: string;
-    description: string;
-    validUntil: string;
-  }[];
+  latitude: number;
+  longitude: number;
+  avg_rating: number | null;
+  profile_image_url: string | null;
+  is_active: boolean;
+  cafe_hours: CafeHourRow[];
+  menu_items: MenuItemRow[];
+  reviews: ReviewRow[];
 }
 
-// Mock data for a single cafe
-const MOCK_CAFE: Cafe = {
-  id: '1',
-  name: 'The Coffee House',
-  address: '123 Coffee Street',
-  rating: 4.5,
-  distance: 0.5,
-  image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500',
-  isOpen: true,
-  openingHours: {
-    Monday: { open: '07:00', close: '18:00' },
-    Tuesday: { open: '07:00', close: '18:00' },
-    Wednesday: { open: '07:00', close: '18:00' },
-    Thursday: { open: '07:00', close: '18:00' },
-    Friday: { open: '07:00', close: '19:00' },
-    Saturday: { open: '08:00', close: '19:00' },
-    Sunday: { open: '08:00', close: '17:00' },
-  },
-  specialOffers: [
-    {
-      id: '1',
-      title: 'Happy Hour',
-      description: '20% off all pastries from 2-4 PM',
-      validUntil: '2024-04-01',
-    },
-  ],
-  menu: [
-    {
-      id: '1',
-      name: 'Espresso',
-      description: 'Rich and bold single shot espresso',
-      price: 3.50,
-      category: 'Coffee',
-      image: 'https://images.unsplash.com/photo-1610889556528-9a770e32642f?w=500',
-      customization: [
-        {
-          name: 'Size',
-          options: [
-            { name: 'Single Shot', price: 0 },
-            { name: 'Double Shot', price: 1.00 },
-          ],
-        },
-        {
-          name: 'Milk',
-          options: [
-            { name: 'Regular', price: 0 },
-            { name: 'Oat', price: 0.50 },
-            { name: 'Almond', price: 0.50 },
-          ],
-        },
-      ],
-    },
-    {
-      id: '2',
-      name: 'Latte',
-      description: 'Espresso with steamed milk and light foam',
-      price: 4.50,
-      category: 'Coffee',
-      image: 'https://images.unsplash.com/photo-1529892485617-25f63cd7b1e9?w=500',
-      customization: [
-        {
-          name: 'Size',
-          options: [
-            { name: 'Small', price: 0 },
-            { name: 'Medium', price: 0.50 },
-            { name: 'Large', price: 1.00 },
-          ],
-        },
-        {
-          name: 'Milk',
-          options: [
-            { name: 'Regular', price: 0 },
-            { name: 'Oat', price: 0.50 },
-            { name: 'Almond', price: 0.50 },
-          ],
-        },
-      ],
-    },
-    {
-      id: '3',
-      name: 'Croissant',
-      description: 'Buttery, flaky French-style croissant',
-      price: 4.50,
-      category: 'Pastries',
-      image: 'https://images.unsplash.com/photo-1608198093002-ad4e005484ec?w=500',
-    },
-    {
-      id: '4',
-      name: 'Scone',
-      description: 'Fresh-baked scone with your choice of flavor',
-      price: 3.50,
-      category: 'Pastries',
-      image: 'https://images.unsplash.com/photo-1598373182133-52452f7691ef?w=500',
-      customization: [
-        {
-          name: 'Flavor',
-          options: [
-            { name: 'Plain', price: 0 },
-            { name: 'Blueberry', price: 0.50 },
-            { name: 'Chocolate Chip', price: 0.50 },
-          ],
-        },
-      ],
-    },
-  ],
-  reviews: [
-    {
-      id: '1',
-      userId: 'user1',
-      userName: 'John Doe',
-      rating: 5,
-      comment: 'Best coffee in town! The pastries are amazing too.',
-      date: '2024-03-15',
-    },
-    {
-      id: '2',
-      userId: 'user2',
-      userName: 'Jane Smith',
-      rating: 4,
-      comment: 'Great atmosphere and friendly staff. Coffee is consistently good.',
-      date: '2024-03-10',
-    },
-  ],
-};
+const OTHER_CATEGORY = 'Other';
 
 export default function CafeScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
+  const { id } = useLocalSearchParams();
+  const cafeId = Number(Array.isArray(id) ? id[0] : id);
+
+  const cart = useCart();
+
+  const [cafe, setCafe] = useState<CafeRow | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [cartItems, setCartItems] = useState<{
-    id: string;
-    quantity: number;
-    customizations?: { name: string; option: string; price: number }[];
-  }[]>([]);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const [customizations, setCustomizations] = useState<{
-    [key: string]: { name: string; option: string; price: number };
-  }>({});
 
-  const categories = Array.from(new Set(MOCK_CAFE.menu.map(item => item.category)));
-
-  const filteredMenu = selectedCategory
-    ? MOCK_CAFE.menu.filter(item => item.category === selectedCategory)
-    : MOCK_CAFE.menu;
-
-  const addToCart = (item: MenuItem) => {
-    if (item.customization) {
-      setSelectedItem(item);
-      return;
-    }
-
-    setCartItems(prev => {
-      const existingItem = prev.find(cartItem => cartItem.id === item.id);
-      if (existingItem) {
-        return prev.map(cartItem =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      if (!Number.isFinite(cafeId)) {
+        if (isMounted) setIsLoading(false);
+        return;
       }
-      return [...prev, { id: item.id, quantity: 1 }];
+      const { data, error } = await supabase
+        .from('cafes')
+        .select('*, cafe_hours(*), menu_items(*), reviews(*)')
+        .eq('cafe_id', cafeId)
+        .single();
+
+      if (!isMounted) return;
+      if (error) {
+        console.error('Error fetching cafe:', error);
+        setCafe(null);
+      } else {
+        setCafe(data as CafeRow);
+      }
+      setIsLoading(false);
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [cafeId]);
+
+  // Open/closed from cafe_hours (1 = Monday … 7 = Sunday)
+  const dayOfWeek = new Date().getDay() === 0 ? 7 : new Date().getDay();
+  const currentTime = new Date().toTimeString().slice(0, 5);
+  const todayHours = cafe?.cafe_hours?.find((h) => h.day_of_week === dayOfWeek);
+  let isOpen = false;
+  if (todayHours && !todayHours.is_closed) {
+    isOpen =
+      currentTime >= todayHours.opening_time.slice(0, 5) &&
+      currentTime <= todayHours.closing_time.slice(0, 5);
+  }
+
+  const rating = Number(cafe?.avg_rating || 0);
+  const reviews = [...(cafe?.reviews ?? [])].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  // Available menu items grouped by category (nulls under "Other")
+  const availableItems = (cafe?.menu_items ?? []).filter((item) => item.is_available);
+  const categories = Array.from(
+    new Set(availableItems.map((item) => item.category ?? OTHER_CATEGORY))
+  ).sort((a, b) => {
+    if (a === OTHER_CATEGORY) return 1;
+    if (b === OTHER_CATEGORY) return -1;
+    return a.localeCompare(b);
+  });
+  const visibleCategories = selectedCategory ? [selectedCategory] : categories;
+  const itemsForCategory = (category: string) =>
+    availableItems.filter((item) => (item.category ?? OTHER_CATEGORY) === category);
+
+  // Cart belongs to a single cafe; only reflect it here when it is this cafe's cart.
+  const isThisCafesCart = cart.cafeId === cafe?.cafe_id;
+  const quantityInCart = (menuItemId: number) =>
+    isThisCafesCart
+      ? cart.items.find((i) => i.menuItemId === menuItemId)?.quantity ?? 0
+      : 0;
+
+  const addToCart = (item: MenuItemRow) => {
+    if (!cafe) return;
+    cart.addItem(cafe.cafe_id, cafe.name, {
+      menuItemId: item.menu_item_id,
+      name: item.name,
+      price: item.price,
     });
   };
 
-  const removeFromCart = (itemId: string) => {
-    setCartItems(prev => {
-      const existingItem = prev.find(item => item.id === itemId);
-      if (existingItem && existingItem.quantity > 1) {
-        return prev.map(item =>
-          item.id === itemId
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
-        );
-      }
-      return prev.filter(item => item.id !== itemId);
-    });
-  };
-
-  const getCartTotal = () => {
-    return cartItems.reduce((total, item) => {
-      const menuItem = MOCK_CAFE.menu.find(menuItem => menuItem.id === item.id);
-      const basePrice = menuItem?.price || 0;
-      const customizationTotal = item.customizations?.reduce(
-        (sum, custom) => sum + custom.price,
-        0
-      ) || 0;
-      return total + (basePrice + customizationTotal) * item.quantity;
-    }, 0);
+  const decrementItem = (item: MenuItemRow) => {
+    cart.setQuantity(item.menu_item_id, quantityInCart(item.menu_item_id) - 1);
   };
 
   const handleCheckout = () => {
-    if (cartItems.length === 0) {
-      Alert.alert('Empty Cart', 'Please add items to your cart before checking out.');
-      return;
-    }
-
-    // Prepare the cart items to send to the checkout page
-    const checkoutItems = cartItems.map(item => {
-      const menuItem = MOCK_CAFE.menu.find(menuItem => menuItem.id === item.id);
-      return {
-        id: item.id,
-        name: menuItem?.name || 'Unknown Item',
-        price: menuItem?.price || 0,
-        quantity: item.quantity
-      };
-    });
-
-    // Convert cart items to a JSON string and encode for URL
-    const cartItemsStr = encodeURIComponent(JSON.stringify(checkoutItems));
-    
-    router.push({
-      pathname: '/checkout',
-      params: {
-        cartItems: cartItemsStr,
-        cafeName: MOCK_CAFE.name,
-        cafeImage: MOCK_CAFE.image
-      }
-    });
-  };
-
-  const handleCustomization = (item: MenuItem, customization: { name: string; option: string; price: number }) => {
-    setCustomizations(prev => ({
-      ...prev,
-      [customization.name]: customization,
-    }));
-  };
-
-  const handleAddCustomizedItem = () => {
-    if (!selectedItem) return;
-
-    const customizationsList = Object.values(customizations);
-    setCartItems(prev => {
-      const existingItem = prev.find(item => item.id === selectedItem.id);
-      if (existingItem) {
-        return prev.map(item =>
-          item.id === selectedItem.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-      return [...prev, { id: selectedItem.id, quantity: 1, customizations: customizationsList }];
-    });
-    setSelectedItem(null);
-    setCustomizations({});
-  };
-
-  const renderCustomizationModal = () => {
-    if (!selectedItem) return null;
-
-    return (
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{selectedItem.name}</Text>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => {
-                setSelectedItem(null);
-                setCustomizations({});
-              }}
-            >
-              <FontAwesome name="close" size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
-            {selectedItem.image && (
-              <Image 
-                source={{ uri: selectedItem.image }} 
-                style={styles.modalImage} 
-                resizeMode="cover"
-              />
-            )}
-            
-            <Text style={styles.modalDescription}>{selectedItem.description}</Text>
-            
-            {selectedItem.customization?.map(custom => (
-              <View key={custom.name} style={styles.customizationSection}>
-                <Text style={styles.customizationTitle}>{custom.name}</Text>
-                {custom.options.map(option => (
-                  <TouchableOpacity
-                    key={option.name}
-                    style={[
-                      styles.customizationOption,
-                      customizations[custom.name]?.option === option.name && styles.customizationOptionSelected,
-                    ]}
-                    onPress={() => handleCustomization(selectedItem, {
-                      name: custom.name,
-                      option: option.name,
-                      price: option.price,
-                    })}
-                  >
-                    <Text style={styles.customizationOptionText}>
-                      {option.name}
-                    </Text>
-                    <Text style={styles.customizationOptionPrice}>
-                      {option.price > 0 ? `+$${option.price.toFixed(2)}` : 'Included'}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ))}
-          </ScrollView>
-          
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={[styles.modalActionButton]}
-              onPress={() => {
-                setSelectedItem(null);
-                setCustomizations({});
-              }}
-            >
-              <Text style={styles.modalActionButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalActionButton, { backgroundColor: '#007AFF' }]}
-              onPress={handleAddCustomizedItem}
-            >
-              <Text style={[styles.modalActionButtonText, { color: '#fff' }]}>Add to Cart</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    );
+    router.push('/checkout');
   };
 
   // Create dynamic styles based on color scheme
@@ -422,12 +198,68 @@ export default function CafeScreen() {
     },
   });
 
+  if (isLoading) {
+    return (
+      <>
+        <Stack.Screen
+          options={{
+            headerShown: true,
+            headerTitle: '',
+            headerStyle: { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' },
+            headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+            headerShadowVisible: false,
+          }}
+        />
+        <View
+          style={[
+            styles.container,
+            styles.centerContainer,
+            { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' },
+          ]}
+        >
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
+      </>
+    );
+  }
+
+  if (!cafe) {
+    return (
+      <>
+        <Stack.Screen
+          options={{
+            headerShown: true,
+            headerTitle: 'Cafe',
+            headerStyle: { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' },
+            headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+            headerShadowVisible: false,
+          }}
+        />
+        <View
+          style={[
+            styles.container,
+            styles.centerContainer,
+            { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' },
+          ]}
+        >
+          <FontAwesome name="coffee" size={48} color="#666" />
+          <Text style={[styles.notFoundText, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
+            Cafe not found
+          </Text>
+          <TouchableOpacity style={styles.notFoundButton} onPress={() => router.back()}>
+            <Text style={styles.notFoundButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </>
+    );
+  }
+
   return (
     <>
       <Stack.Screen
         options={{
           headerShown: true,
-          headerTitle: MOCK_CAFE.name,
+          headerTitle: cafe.name,
           headerStyle: {
             backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
           },
@@ -445,10 +277,10 @@ export default function CafeScreen() {
               }}
               onPress={() => router.back()}
             >
-              <FontAwesome 
-                name="chevron-left" 
-                size={20} 
-                color={colorScheme === 'dark' ? '#fff' : '#000'} 
+              <FontAwesome
+                name="chevron-left"
+                size={20}
+                color={colorScheme === 'dark' ? '#fff' : '#000'}
               />
             </TouchableOpacity>
           ),
@@ -458,51 +290,43 @@ export default function CafeScreen() {
       <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }]}>
         <ScrollView style={styles.scrollView}>
           <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: MOCK_CAFE.image }}
-              style={styles.image}
-              resizeMode="cover"
-            />
+            {cafe.profile_image_url ? (
+              <Image
+                source={{ uri: cafe.profile_image_url }}
+                style={styles.image}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={[styles.image, styles.imagePlaceholder]}>
+                <FontAwesome name="coffee" size={48} color="#999" />
+              </View>
+            )}
           </View>
           <View style={styles.content}>
             <Text style={[styles.cafeName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-              {MOCK_CAFE.name}
+              {cafe.name}
             </Text>
-            <Text style={styles.cafeAddress}>{MOCK_CAFE.address}</Text>
+            <Text style={styles.cafeAddress}>{cafe.address}</Text>
             <View style={styles.ratingContainer}>
               <View style={styles.ratingStarsContainer}>
                 <Text style={[styles.rating, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-                  {MOCK_CAFE.rating}
+                  {rating.toFixed(1)}
                 </Text>
                 <FontAwesome name="star" size={16} color="#FFD700" style={styles.ratingStar} />
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.reviewsButton}
-                onPress={() => router.push(`/cafe/${MOCK_CAFE.id}/reviews`)}
+                onPress={() => setShowReviews((prev) => !prev)}
               >
-                <Text style={styles.reviewsText}>See {MOCK_CAFE.reviews.length} reviews</Text>
+                <Text style={styles.reviewsText}>
+                  {showReviews ? 'Hide reviews' : `See ${reviews.length} reviews`}
+                </Text>
               </TouchableOpacity>
-              <Text style={styles.distance}>{MOCK_CAFE.distance} km away</Text>
+              <Text style={[styles.openStatus, { color: isOpen ? '#4CAF50' : '#F44336' }]}>
+                {isOpen ? 'Open' : 'Closed'}
+              </Text>
             </View>
           </View>
-
-          {MOCK_CAFE.specialOffers.length > 0 && (
-            <View style={styles.specialOffers}>
-              <Text style={styles.specialOffersTitle}>Special Offers</Text>
-              {MOCK_CAFE.specialOffers.map(offer => (
-                <View key={offer.id} style={styles.specialOffer}>
-                  <FontAwesome name="gift" size={20} color="#FFD700" />
-                  <View style={styles.specialOfferInfo}>
-                    <Text style={styles.specialOfferTitle}>{offer.title}</Text>
-                    <Text style={styles.specialOfferDescription}>{offer.description}</Text>
-                    <Text style={styles.specialOfferValid}>
-                      Valid until {new Date(offer.validUntil).toLocaleDateString()}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
 
           <View style={styles.categoriesContainer}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -529,53 +353,69 @@ export default function CafeScreen() {
           </View>
 
           <View style={styles.menuContainer}>
-            {filteredMenu.map(item => (
-              <View key={item.id} style={styles.menuItem}>
-                {item.image && (
-                  <Image 
-                    source={{ uri: item.image }} 
-                    style={styles.menuItemImage} 
-                    resizeMode="cover"
-                  />
-                )}
-                <View style={styles.menuItemInfo}>
-                  <Text style={[styles.menuItemName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-                    {item.name}
-                  </Text>
-                  <Text style={styles.menuItemDescription}>{item.description}</Text>
-                  <Text style={styles.menuItemPrice}>${item.price.toFixed(2)}</Text>
-                  {item.customization && (
-                    <Text style={styles.customizationNote}>Customizable</Text>
-                  )}
-                </View>
-                <View style={styles.menuItemActions}>
-                  {cartItems.find(cartItem => cartItem.id === item.id) ? (
-                    <View style={styles.quantityControls}>
-                      <TouchableOpacity
-                        style={styles.quantityButton}
-                        onPress={() => removeFromCart(item.id)}
-                      >
-                        <FontAwesome name="minus" size={16} color="#007AFF" />
-                      </TouchableOpacity>
-                      <Text style={styles.quantity}>
-                        {cartItems.find(cartItem => cartItem.id === item.id)?.quantity}
+            {availableItems.length === 0 && (
+              <Text style={styles.emptyMenuText}>No menu items available right now.</Text>
+            )}
+            {visibleCategories.map(category => (
+              <View key={category}>
+                <Text
+                  style={[
+                    styles.menuCategoryTitle,
+                    { color: colorScheme === 'dark' ? '#fff' : '#000' },
+                  ]}
+                >
+                  {category}
+                </Text>
+                {itemsForCategory(category).map(item => (
+                  <View key={item.menu_item_id} style={styles.menuItem}>
+                    {item.image_url && (
+                      <Image
+                        source={{ uri: item.image_url }}
+                        style={styles.menuItemImage}
+                        resizeMode="cover"
+                      />
+                    )}
+                    <View style={styles.menuItemInfo}>
+                      <Text style={[styles.menuItemName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
+                        {item.name}
                       </Text>
-                      <TouchableOpacity
-                        style={styles.quantityButton}
-                        onPress={() => addToCart(item)}
-                      >
-                        <FontAwesome name="plus" size={16} color="#007AFF" />
-                      </TouchableOpacity>
+                      {item.description ? (
+                        <Text style={styles.menuItemDescription}>{item.description}</Text>
+                      ) : null}
+                      <Text style={styles.menuItemPrice}>${Number(item.price).toFixed(2)}</Text>
                     </View>
-                  ) : (
-                    <TouchableOpacity
-                      style={styles.addButton}
-                      onPress={() => addToCart(item)}
-                    >
-                      <Text style={styles.addButtonText}>Add</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
+                    <View style={styles.menuItemActions}>
+                      {quantityInCart(item.menu_item_id) > 0 ? (
+                        <View style={styles.quantityControls}>
+                          <TouchableOpacity
+                            style={styles.quantityButton}
+                            onPress={() => decrementItem(item)}
+                          >
+                            <FontAwesome name="minus" size={16} color="#007AFF" />
+                          </TouchableOpacity>
+                          <Text
+                            style={[styles.quantity, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}
+                          >
+                            {quantityInCart(item.menu_item_id)}
+                          </Text>
+                          <TouchableOpacity
+                            style={styles.quantityButton}
+                            onPress={() => addToCart(item)}
+                          >
+                            <FontAwesome name="plus" size={16} color="#007AFF" />
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <TouchableOpacity
+                          style={styles.addButton}
+                          onPress={() => addToCart(item)}
+                        >
+                          <Text style={styles.addButtonText}>Add</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                ))}
               </View>
             ))}
           </View>
@@ -593,31 +433,34 @@ export default function CafeScreen() {
                 </TouchableOpacity>
               </View>
               <View style={dynamicStyles.overallRating}>
-                <Text style={dynamicStyles.ratingNumber}>{MOCK_CAFE.rating}</Text>
+                <Text style={dynamicStyles.ratingNumber}>{rating.toFixed(1)}</Text>
                 <View style={styles.ratingStars}>
                   {[...Array(5)].map((_, index) => (
                     <FontAwesome
                       key={index}
-                      name={index < Math.floor(MOCK_CAFE.rating) ? 'star' : index < MOCK_CAFE.rating ? 'star-half-o' : 'star-o'}
+                      name={index < Math.floor(rating) ? 'star' : index < rating ? 'star-half-o' : 'star-o'}
                       size={24}
                       color="#FFD700"
                       style={styles.ratingStar}
                     />
                   ))}
                 </View>
-                <Text style={styles.totalReviews}>{MOCK_CAFE.reviews.length} reviews</Text>
+                <Text style={styles.totalReviews}>{reviews.length} reviews</Text>
               </View>
-              {MOCK_CAFE.reviews.map(review => (
-                <View key={review.id} style={dynamicStyles.review}>
+              {reviews.length === 0 && (
+                <Text style={styles.totalReviews}>No reviews yet. Be the first to leave one!</Text>
+              )}
+              {reviews.map(review => (
+                <View key={review.review_id} style={dynamicStyles.review}>
                   <View style={styles.reviewHeader}>
                     <View style={styles.reviewerInfo}>
                       <View style={styles.reviewerAvatar}>
                         <FontAwesome name="user-circle" size={32} color="#666" />
                       </View>
                       <View>
-                        <Text style={dynamicStyles.reviewerName}>{review.userName}</Text>
+                        <Text style={dynamicStyles.reviewerName}>BREAK customer</Text>
                         <Text style={styles.reviewDate}>
-                          {new Date(review.date).toLocaleDateString()}
+                          {new Date(review.created_at).toLocaleDateString()}
                         </Text>
                       </View>
                     </View>
@@ -632,29 +475,24 @@ export default function CafeScreen() {
                       ))}
                     </View>
                   </View>
-                  <Text style={dynamicStyles.reviewComment}>{review.comment}</Text>
-                  <View style={styles.reviewActions}>
-                    <TouchableOpacity
-                      style={styles.reviewActionButton}
-                      onPress={() => Alert.alert('Thanks!', 'Thanks for finding this review helpful!')}
-                    >
-                      <FontAwesome name="thumbs-up" size={16} color="#666" />
-                      <Text style={styles.reviewActionText}>Helpful</Text>
-                    </TouchableOpacity>
-                  </View>
+                  {review.comment ? (
+                    <Text style={dynamicStyles.reviewComment}>{review.comment}</Text>
+                  ) : null}
                 </View>
               ))}
             </View>
           )}
         </ScrollView>
 
-        {cartItems.length > 0 && (
+        {isThisCafesCart && cart.items.length > 0 && (
           <View style={styles.cartBar}>
             <View style={styles.cartInfo}>
               <Text style={styles.cartItemCount}>
-                {cartItems.reduce((sum, item) => sum + item.quantity, 0)} items
+                {cart.itemCount} items
               </Text>
-              <Text style={styles.cartTotal}>${getCartTotal().toFixed(2)}</Text>
+              <Text style={[styles.cartTotal, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
+                ${cart.subtotal.toFixed(2)}
+              </Text>
             </View>
             <TouchableOpacity
               style={styles.checkoutButton}
@@ -664,8 +502,6 @@ export default function CafeScreen() {
             </TouchableOpacity>
           </View>
         )}
-
-        {renderCustomizationModal()}
       </View>
     </>
   );
@@ -676,6 +512,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  centerContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  notFoundText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  notFoundButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  notFoundButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   scrollView: {
     flex: 1,
   },
@@ -685,6 +543,11 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: 200,
+  },
+  imagePlaceholder: {
+    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     padding: 16,
@@ -724,41 +587,9 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontSize: 14,
   },
-  distance: {
-    color: '#666',
+  openStatus: {
     fontSize: 14,
-  },
-  specialOffers: {
-    padding: 16,
-    backgroundColor: '#FFF9E6',
-  },
-  specialOffersTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  specialOffer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  specialOfferInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  specialOfferTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  specialOfferDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  specialOfferValid: {
-    fontSize: 12,
-    color: '#999',
+    fontWeight: '600',
   },
   categoriesContainer: {
     padding: 16,
@@ -785,6 +616,18 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     padding: 16,
+  },
+  menuCategoryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  emptyMenuText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    paddingVertical: 24,
   },
   menuItem: {
     flexDirection: 'row',
@@ -816,11 +659,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#007AFF',
-  },
-  customizationNote: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
   },
   menuItemActions: {
     alignItems: 'flex-end',
@@ -885,95 +723,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  modalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    width: '90%',
-    maxHeight: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  modalCloseButton: {
-    padding: 8,
-  },
-  modalImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  modalDescription: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 16,
-  },
-  customizationSection: {
-    marginBottom: 16,
-  },
-  customizationTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  customizationOption: {
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
-    marginBottom: 8,
-  },
-  customizationOptionSelected: {
-    backgroundColor: '#007AFF',
-  },
-  customizationOptionText: {
-    fontSize: 16,
-    color: '#000',
-  },
-  customizationOptionPrice: {
-    fontSize: 12,
-    color: '#666',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  modalActionButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 8,
-    backgroundColor: '#f1f1f1',
-  },
-  modalActionButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
   reviewsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1018,21 +767,4 @@ const styles = StyleSheet.create({
   reviewRating: {
     flexDirection: 'row',
   },
-  reviewActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  reviewActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-  },
-  reviewActionText: {
-    marginLeft: 8,
-    color: '#666',
-    fontSize: 14,
-  },
-  modalScrollView: {
-    maxHeight: '85%',
-  },
-}); 
+});

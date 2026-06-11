@@ -8,11 +8,11 @@ export default function OrderConfirmationScreen() {
   const params = useLocalSearchParams();
   const colorScheme = useColorScheme();
   
-  const orderId = params.orderId as string;
-  const pickupTime = params.pickupTime as string;
-  
-  // Format the order number to be more user-friendly
-  const formattedOrderId = orderId ? orderId.split('_')[2] || '12345' : '12345';
+  const orderIdParam = params.order_id;
+  const orderId = Array.isArray(orderIdParam) ? orderIdParam[0] : orderIdParam;
+
+  // Real order number from the database
+  const formattedOrderId = orderId ?? '—';
 
   return (
     <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }]}>
@@ -41,7 +41,7 @@ export default function OrderConfirmationScreen() {
             Estimated Pickup Time
           </Text>
           <Text style={[styles.detailValue, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            {pickupTime || 'In about 15 minutes'}
+            15-20 min
           </Text>
         </View>
 

@@ -5,7 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "breakcafe",
+    "scheme": [
+      "breakcafe",
+      "com.googleusercontent.apps.826580028121-9m72cato1ca4j6m4gmgv75e9m90c0cp3"
+    ],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
