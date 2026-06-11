@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 200" role="img" aria-label="BREAK — Daybreak logo">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Marcellus&amp;display=swap');
+    text { font-family: 'Marcellus', Georgia, serif; }
+  </style>
+  <defs>
+    <linearGradient id="g6sky" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E9F0F8"/>
+      <stop offset="0.55" stop-color="#F0EDF7"/>
+      <stop offset="1" stop-color="#EAF2EE"/>
+    </linearGradient>
+    <linearGradient id="g6dawn" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#8FBFA6"/>
+      <stop offset="1" stop-color="#A9C6E8"/>
+    </linearGradient>
+  </defs>
+  <!-- morning-mist plaque so the mark reads on any background -->
+  <rect width="620" height="200" rx="24" fill="url(#g6sky)"/>
+  <!-- Mark: the After Hours latte ring at 7 AM — the crema crescent flips east into a sunrise -->
+  <circle cx="100" cy="100" r="58" fill="none" stroke="#4F8268" stroke-width="3"/>
+  <circle cx="100" cy="100" r="44" fill="none" stroke="#A9C6E8" stroke-width="1.5" opacity="0.9"/>
+  <path d="M100 58a42 42 0 1 1 0 84 60 60 0 0 0 0-84z" fill="url(#g6dawn)"/>
+  <!-- Wordmark -->
+  <text x="196" y="110" font-size="58" letter-spacing="16" fill="#232B3A">BREAK</text>
+  <text x="199" y="148" font-size="15" letter-spacing="7" fill="#4F8268">DAYBREAK · LOS ANGELES</text>
+</svg>
