@@ -33,39 +33,24 @@ export default function CheckoutScreen() {
         return;
       }
 
-      const { data: orderRow, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          cafe_id: cafeId,
-          status: 'pending',
-          notes: notes.trim() ? notes.trim() : null,
-          subtotal,
-          tip,
-          total,
-        })
-        .select('order_id')
-        .single();
-
-      if (orderError || !orderRow) {
-        Alert.alert('Order failed', 'There was an error placing your order. Please try again.');
-        return;
-      }
-
-      const orderId = orderRow.order_id as number;
-
-      const { error: itemsError } = await supabase.from('order_items').insert(
-        items.map((item) => ({
-          order_id: orderId,
+      // single transactional RPC — order + items succeed or fail together,
+      // so a failed item insert can no longer strand an empty pending order
+      const { data: orderId, error: orderError } = await supabase.rpc('place_order', {
+        cafe_id: cafeId,
+        notes: notes.trim() ? notes.trim() : null,
+        subtotal,
+        tip,
+        total,
+        items: items.map((item) => ({
           menu_item_id: item.menuItemId,
           quantity: item.quantity,
           unit_price: item.price,
           customizations: item.customizations ?? null,
-        }))
-      );
+        })),
+      });
 
-      if (itemsError) {
-        Alert.alert('Order failed', 'There was an error saving your order items. Please try again.');
+      if (orderError || orderId == null) {
+        Alert.alert('Order failed', 'There was an error placing your order. Please try again.');
         return;
       }
 

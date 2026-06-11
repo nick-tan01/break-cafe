@@ -1,8 +1,9 @@
 -- ============================================================
 -- BREAK — Supabase (Postgres) schema
 -- Deployed to project xjopwpmwljhihtyjvxxy (org: Break) on 2026-06-11
--- via two MCP migrations: break_initial_schema +
--- lock_down_function_rpc_exposure. This file is the consolidated
+-- via three migrations: break_initial_schema +
+-- lock_down_function_rpc_exposure (MCP) + place_order_rpc
+-- (dashboard SQL editor). This file is the consolidated
 -- equivalent for reference / disaster recovery: running it on a
 -- fresh project reproduces the deployed state.
 -- Column names match what the app queries (lowercase snake_case).
@@ -239,6 +240,62 @@ create policy "edit own review" on public.reviews
   for update to authenticated using (user_id = auth.uid());
 create policy "delete own review" on public.reviews
   for delete to authenticated using (user_id = auth.uid());
+
+-- ============================================================
+-- RPC: place_order — insert an order and its items atomically.
+-- Replaces the app's old two-step insert, which could strand an
+-- empty 'pending' order if the items insert failed.
+-- SECURITY INVOKER on purpose: runs as the calling user, so the
+-- policies above ("customers create own orders" / "insert items
+-- on own order") stay the security boundary. Both inserts happen
+-- in one transaction, so the items policy sees the new order row.
+-- items: jsonb array of
+--   { menu_item_id, quantity, unit_price, customizations }
+-- ============================================================
+create or replace function public.place_order(
+  cafe_id bigint,
+  notes text,
+  subtotal numeric,
+  tip numeric,
+  total numeric,
+  items jsonb
+)
+returns bigint
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  new_order_id bigint;
+begin
+  if auth.uid() is null then
+    raise exception 'not authenticated';
+  end if;
+
+  if items is null or jsonb_typeof(items) <> 'array' or jsonb_array_length(items) = 0 then
+    raise exception 'order must contain at least one item';
+  end if;
+
+  insert into public.orders (user_id, cafe_id, status, notes, subtotal, tip, total)
+  values (auth.uid(), place_order.cafe_id, 'pending', place_order.notes,
+          place_order.subtotal, place_order.tip, place_order.total)
+  returning order_id into new_order_id;
+
+  insert into public.order_items (order_id, menu_item_id, quantity, unit_price, customizations)
+  select new_order_id,
+         (item ->> 'menu_item_id')::bigint,
+         (item ->> 'quantity')::int,
+         (item ->> 'unit_price')::numeric,
+         nullif(item -> 'customizations', 'null'::jsonb)
+  from jsonb_array_elements(place_order.items) as item;
+
+  return new_order_id;
+end;
+$$;
+
+-- signed-in customers only; anon never places orders
+revoke execute on function public.place_order(bigint, text, numeric, numeric, numeric, jsonb) from public, anon;
+grant execute on function public.place_order(bigint, text, numeric, numeric, numeric, jsonb) to authenticated;
 
 -- ============================================================
 -- Seed data — 3 demo LA cafes with hours and a starter menu

@@ -1,4 +1,4 @@
-import { StyleSheet, FlatList, View, Text, TouchableOpacity, Alert, Dimensions, Platform, TextInput, TouchableWithoutFeedback, Keyboard, Modal, Pressable } from 'react-native';
+import { StyleSheet, FlatList, View, Text, TouchableOpacity, Dimensions, Platform, TextInput, TouchableWithoutFeedback, Keyboard, Modal, Pressable } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { useEffect, useState, useRef } from 'react';
@@ -22,7 +22,7 @@ interface Cafe {
   name: string;
   address: string;
   rating: number;
-  distance: string;
+  distance: string | null;
   image: string;
   isOpen: boolean;
   coordinates: {
@@ -42,30 +42,34 @@ export default function ExploreScreen() {
   const [sortBy, setSortBy] = useState<'distance' | 'rating'>('distance');
   const [showOnlyOpen, setShowOnlyOpen] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
-  const [maxDistance, setMaxDistance] = useState(10);
+  // null = no distance limit; only applies when we actually know the location
+  const [maxDistance, setMaxDistance] = useState<number | null>(null);
   const mapRef = useRef<MapView>(null);
 
   useEffect(() => {
     (async () => {
       setIsLoading(true);
+
+      // Location is optional: it powers distance labels, sorting, and the
+      // distance filter, but cafes are always shown even without it.
+      let loc: Location.LocationObject | null = null;
       try {
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          setErrorMsg('Permission to access location was denied');
-          Alert.alert(
-            'Location Permission Required',
-            'Please enable location services to find cafes near you.',
-            [{ text: 'OK' }]
-          );
-          setIsLoading(false);
-          return;
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          loc = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          setLocation(loc);
+          setErrorMsg(null);
+        } else {
+          setErrorMsg('Location is off — showing all cafes');
         }
+      } catch (error) {
+        console.error('Location error:', error);
+        setErrorMsg('Location unavailable — showing all cafes');
+      }
 
-        let loc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        setLocation(loc);
-
+      try {
         const dayOfWeek = new Date().getDay() === 0 ? 7 : new Date().getDay();
         const currentTime = new Date().toTimeString().slice(0, 5);
 
@@ -89,7 +93,9 @@ export default function ExploreScreen() {
           let filtered = data.map((cafe) => {
             const lat = parseFloat(cafe.latitude);
             const lon = parseFloat(cafe.longitude);
-            const distance = getDistanceInMiles(loc.coords.latitude, loc.coords.longitude, lat, lon);
+            const distance = loc
+              ? getDistanceInMiles(loc.coords.latitude, loc.coords.longitude, lat, lon)
+              : null;
             const hours: { opening_time: string; closing_time: string; is_closed: boolean; day_of_week: number } | undefined = cafe.cafe_hours?.find((h: { opening_time: string; closing_time: string; is_closed: boolean; day_of_week: number }) => h.day_of_week === dayOfWeek);
             let isOpen = false;
             if (hours && !hours.is_closed) {
@@ -100,7 +106,7 @@ export default function ExploreScreen() {
               name: cafe.name,
               address: cafe.address,
               rating: Number(cafe.avg_rating || 0),
-              distance: `${distance.toFixed(1)} mi`,
+              distance: distance != null ? `${distance.toFixed(1)} mi` : null,
               image: cafe.profile_image_url,
               isOpen,
               coordinates: { latitude: lat, longitude: lon },
@@ -109,15 +115,17 @@ export default function ExploreScreen() {
           });
 
           if (showOnlyOpen) filtered = filtered.filter(c => c.isOpen);
-          filtered = filtered.filter(c => c.distanceRaw! <= maxDistance);
-          if (sortBy === 'rating') filtered.sort((a, b) => b.rating - a.rating);
-          else filtered.sort((a, b) => a.distanceRaw! - b.distanceRaw!);
+          if (maxDistance != null) {
+            filtered = filtered.filter(c => c.distanceRaw == null || c.distanceRaw <= maxDistance);
+          }
+          if (sortBy === 'rating' || !loc) filtered.sort((a, b) => b.rating - a.rating);
+          else filtered.sort((a, b) => (a.distanceRaw ?? Infinity) - (b.distanceRaw ?? Infinity));
 
           setCafes(filtered);
         }
       } catch (error) {
-        console.error('Location error:', error);
-        setErrorMsg('Could not get location.');
+        console.error('Error fetching cafes:', error);
+        setErrorMsg('Could not load cafes.');
       } finally {
         setIsLoading(false);
       }
@@ -164,12 +172,15 @@ export default function ExploreScreen() {
             <View style={{ flex: 1, justifyContent: 'center', backgroundColor: '#000000aa' }}>
               <View style={{ backgroundColor: '#fff', margin: 20, padding: 20, borderRadius: 12 }}>
                 <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10 }}>Filters</Text>
-                <Text>Max Distance (in miles):</Text>
+                <Text>Max Distance (in miles, blank = any):</Text>
                 <TextInput
-                  value={String(maxDistance)}
-                  onChangeText={(val) => setMaxDistance(Number(val))}
+                  value={maxDistance != null ? String(maxDistance) : ''}
+                  onChangeText={(val) => {
+                    const n = Number(val);
+                    setMaxDistance(val.trim() === '' || Number.isNaN(n) ? null : n);
+                  }}
                   keyboardType="numeric"
-                  placeholder="10"
+                  placeholder="Any"
                   style={{ borderWidth: 1, padding: 8, borderRadius: 8, marginTop: 8, marginBottom: 16 }}
                 />
 
