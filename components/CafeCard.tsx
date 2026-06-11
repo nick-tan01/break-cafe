@@ -1,6 +1,8 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image, useColorScheme } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+
+import { colors, fonts, glassCard } from '../lib/theme';
 
 export interface CafeCardProps {
   name: string;
@@ -14,26 +16,24 @@ export interface CafeCardProps {
 }
 
 export default function CafeCard({ name, address, rating, isOpen, image, distance, onPress }: CafeCardProps) {
-  const colorScheme = useColorScheme();
-
   return (
-    <TouchableOpacity
-      style={[styles.cafeCard, { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#fff' }]}
-      onPress={onPress}
-    >
-      <Image source={{ uri: image ?? undefined }} style={styles.cafeImage} />
-      <View style={styles.cafeInfo}>
-        <Text style={[styles.cafeName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>{name}</Text>
-        <Text style={styles.cafeAddress}>{address}</Text>
-        <View style={styles.cafeStats}>
-          <View style={styles.ratingContainer}>
-            <FontAwesome name="star" size={16} color="#FFD700" />
-            <Text style={styles.rating}>{rating}</Text>
-          </View>
-          {distance != null && <Text style={styles.distance}>{distance}</Text>}
-          <View style={[styles.openStatus, { backgroundColor: isOpen ? '#4CAF50' : '#F44336' }]}>
-            <Text style={styles.openStatusText}>{isOpen ? 'Open' : 'Closed'}</Text>
-          </View>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+      {image ? (
+        <Image source={{ uri: image }} style={styles.thumb} />
+      ) : (
+        <View style={[styles.thumb, styles.thumbFallback]} />
+      )}
+      <View style={styles.info}>
+        <Text style={styles.name} numberOfLines={1}>{name}</Text>
+        <Text style={styles.meta} numberOfLines={1}>
+          {distance != null ? `${distance} · ${address}` : address}
+        </Text>
+        <View style={styles.statRow}>
+          <FontAwesome name="star" size={12} color={colors.gold} />
+          <Text style={styles.rating}>{rating ? rating.toFixed(1) : '—'}</Text>
+          <Text style={isOpen ? styles.openMark : styles.closedMark}>
+            {isOpen ? 'Open now' : 'Closed'}
+          </Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -41,66 +41,62 @@ export default function CafeCard({ name, address, rating, isOpen, image, distanc
 }
 
 const styles = StyleSheet.create({
-  cafeCard: {
+  card: {
+    ...glassCard,
     flexDirection: 'row',
-    borderRadius: 12,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cafeImage: {
-    width: 120,
-    height: 120,
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-  },
-  cafeInfo: {
-    flex: 1,
     padding: 12,
+    marginBottom: 12,
   },
-  cafeName: {
+  thumb: {
+    width: 92,
+    height: 92,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+  },
+  thumbFallback: {
+    backgroundColor: colors.sky,
+  },
+  info: {
+    flex: 1,
+    marginLeft: 14,
+    justifyContent: 'center',
+  },
+  name: {
+    fontFamily: fonts.display,
     fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    letterSpacing: 0.9,
+    color: colors.ink,
   },
-  cafeAddress: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+  meta: {
+    fontFamily: fonts.light,
+    fontSize: 12.5,
+    letterSpacing: 0.4,
+    color: colors.inkSoft,
+    marginTop: 5,
   },
-  cafeStats: {
+  statRow: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 16,
+    marginTop: 8,
   },
   rating: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.ink,
     marginLeft: 4,
-    fontSize: 14,
-    color: '#666',
+    marginRight: 12,
   },
-  distance: {
-    fontSize: 14,
-    color: '#666',
-    marginRight: 16,
+  openMark: {
+    fontFamily: fonts.medium,
+    fontSize: 11.5,
+    letterSpacing: 0.5,
+    color: colors.sage,
   },
-  openStatus: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  openStatusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
+  closedMark: {
+    fontFamily: fonts.medium,
+    fontSize: 11.5,
+    letterSpacing: 0.5,
+    color: colors.inkMuted,
   },
 });

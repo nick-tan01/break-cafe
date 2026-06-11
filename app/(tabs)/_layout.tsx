@@ -1,52 +1,56 @@
 import React from 'react';
 import { Tabs, Stack } from 'expo-router';
-import { useColorScheme } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
+
+import { colors, fonts } from '../../lib/theme';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: colorScheme === 'dark' ? '#fff' : '#000',
-          tabBarInactiveTintColor: colorScheme === 'dark' ? '#666' : '#999',
+          headerShown: false, // each tab renders its own Daybreak header
+          tabBarActiveTintColor: colors.sage,
+          tabBarInactiveTintColor: colors.tabInactive,
           tabBarStyle: {
-            backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
+            backgroundColor: 'rgba(255,255,255,0.94)',
+            borderTopWidth: 1,
+            borderTopColor: colors.hairline,
+          },
+          tabBarLabelStyle: {
+            fontFamily: fonts.medium,
+            fontSize: 9.5,
+            letterSpacing: 1.4,
+            textTransform: 'uppercase',
           },
         }}>
         <Tabs.Screen
           name="index"
           options={{
             title: 'Explore',
-            headerTitle: 'Explore Cafes',
-            tabBarIcon: ({ color }) => <FontAwesome name="compass" size={24} color={color} />,
+            tabBarIcon: ({ color }) => <Feather name="home" size={21} color={color} />,
           }}
         />
         <Tabs.Screen
           name="search"
           options={{
             title: 'Search',
-            headerTitle: 'Search',
-            tabBarIcon: ({ color }) => <FontAwesome name="search" size={24} color={color} />,
+            tabBarIcon: ({ color }) => <Feather name="search" size={21} color={color} />,
           }}
         />
         <Tabs.Screen
           name="orders"
           options={{
             title: 'Orders',
-            headerTitle: 'My Orders',
-            tabBarIcon: ({ color }) => <FontAwesome name="list" size={24} color={color} />,
+            tabBarIcon: ({ color }) => <Feather name="file-text" size={21} color={color} />,
           }}
         />
         <Tabs.Screen
           name="profile"
           options={{
             title: 'Profile',
-            headerTitle: 'My Profile',
-            tabBarIcon: ({ color }) => <FontAwesome name="user" size={24} color={color} />,
+            tabBarIcon: ({ color }) => <Feather name="user" size={21} color={color} />,
           }}
         />
       </Tabs>

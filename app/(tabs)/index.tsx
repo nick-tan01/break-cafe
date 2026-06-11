@@ -1,15 +1,17 @@
-import { StyleSheet, FlatList, View, Text, TouchableOpacity, Dimensions, Platform, TextInput, TouchableWithoutFeedback, Keyboard, Modal, Pressable } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { useColorScheme } from 'react-native';
+import { StyleSheet, FlatList, View, Text, TouchableOpacity, Dimensions, TextInput, TouchableWithoutFeedback, Keyboard, Modal, Pressable } from 'react-native';
+import { Feather, FontAwesome } from '@expo/vector-icons';
 import { useEffect, useState, useRef } from 'react';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import MapView, { Marker, Callout } from 'react-native-maps';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React from 'react';
 
 import { supabase } from '../../lib/supabase';
 import { getDistanceInMiles } from '../../lib/distance';
+import { colors, fonts, glassCard, display, overline, primaryButton, primaryButtonText } from '../../lib/theme';
 import CafeCard from '../../components/CafeCard';
+import GradientScreen from '../../components/GradientScreen';
 
 // Map component dimensions
 const { width, height } = Dimensions.get('window');
@@ -31,8 +33,22 @@ interface Cafe {
   };
 }
 
+function greetingForNow(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function dateKicker(): string {
+  const now = new Date();
+  const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
+  const monthDay = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  return `${weekday} · ${monthDay}`;
+}
+
 export default function ExploreScreen() {
-  const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const router = useRouter();
@@ -135,7 +151,7 @@ export default function ExploreScreen() {
   // Function to animate to user's location on the map
   const goToUserLocation = () => {
     if (!location || !mapRef.current) return;
-    
+
     mapRef.current.animateToRegion({
       latitude: location.coords.latitude,
       longitude: location.coords.longitude,
@@ -157,22 +173,102 @@ export default function ExploreScreen() {
   );
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }]}>
-        <View style={styles.filtersContainer}>
-          {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
-          <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilterModal(true)}>
-            <FontAwesome name="filter" size={16} color="#007AFF" />
-            <Text style={styles.filterButtonText}>Filters</Text>
+    <GradientScreen>
+      <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+        <View style={styles.greet}>
+          <Text style={styles.greetDate}>{dateKicker()}</Text>
+          <Text style={styles.greetTitle}>{greetingForNow()}</Text>
+          <Text style={styles.greetSub}>
+            {isLoading
+              ? 'Pouring shortly…'
+              : cafes.length > 0
+                ? `${cafes.length} ${cafes.length === 1 ? 'cafe' : 'cafes'} pouring near you.`
+                : 'Order ahead — skip the line.'}
+          </Text>
+          {errorMsg && <Text style={styles.notice}>{errorMsg}</Text>}
+        </View>
+
+        <View style={styles.searchRow}>
+          <TouchableOpacity
+            style={styles.searchField}
+            activeOpacity={0.8}
+            onPress={() => router.push('/(tabs)/search')}
+          >
+            <Feather name="search" size={16} color={colors.inkMuted} />
+            <Text style={styles.searchPlaceholder}>Search cafes or drinks…</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.filterBtn} onPress={() => setShowFilterModal(true)}>
+            <Feather name="sliders" size={18} color={colors.sage} />
           </TouchableOpacity>
         </View>
 
+        <View style={styles.sect}>
+          <Text style={styles.sectTitle}>Pouring now</Text>
+          <TouchableOpacity onPress={() => setViewMode(viewMode === 'list' ? 'map' : 'list')}>
+            <Text style={styles.sectLink}>{viewMode === 'list' ? 'Map' : 'List'}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {viewMode === 'list' ? (
+          <FlatList
+            data={cafes}
+            renderItem={renderCafeItem}
+            keyExtractor={(item) => String(item.id)}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <View style={styles.mapWrap}>
+            <MapView
+              ref={mapRef}
+              style={styles.map}
+              initialRegion={location ? {
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+                latitudeDelta: LATITUDE_DELTA,
+                longitudeDelta: LONGITUDE_DELTA,
+              } : undefined}
+              showsUserLocation
+              showsMyLocationButton={false}
+            >
+              {cafes.map((cafe) => (
+                <Marker
+                  key={cafe.id}
+                  coordinate={cafe.coordinates}
+                  pinColor={cafe.isOpen ? colors.sage : colors.tabInactive}
+                >
+                  <Callout onPress={() => router.push(`/cafe/${cafe.id}`)}>
+                    <View style={styles.calloutContainer}>
+                      <Text style={styles.calloutTitle}>{cafe.name}</Text>
+                      <Text style={styles.calloutAddress}>{cafe.address}</Text>
+                      <View style={styles.calloutDetails}>
+                        <View style={styles.calloutRating}>
+                          <FontAwesome name="star" size={12} color={colors.gold} />
+                          <Text style={styles.calloutRatingText}>{cafe.rating}</Text>
+                        </View>
+                        {cafe.distance != null && (
+                          <Text style={styles.calloutDistance}>{cafe.distance}</Text>
+                        )}
+                        <Text style={cafe.isOpen ? styles.calloutOpen : styles.calloutClosed}>
+                          {cafe.isOpen ? 'Open' : 'Closed'}
+                        </Text>
+                      </View>
+                      <Text style={styles.calloutTapText}>Tap for details</Text>
+                    </View>
+                  </Callout>
+                </Marker>
+              ))}
+            </MapView>
+          </View>
+        )}
+
         <Modal visible={showFilterModal} animationType="slide" transparent>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-            <View style={{ flex: 1, justifyContent: 'center', backgroundColor: '#000000aa' }}>
-              <View style={{ backgroundColor: '#fff', margin: 20, padding: 20, borderRadius: 12 }}>
-                <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10 }}>Filters</Text>
-                <Text>Max Distance (in miles, blank = any):</Text>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalCard}>
+                <Text style={styles.modalTitle}>Filters</Text>
+
+                <Text style={styles.modalLabel}>Max distance · miles</Text>
                 <TextInput
                   value={maxDistance != null ? String(maxDistance) : ''}
                   onChangeText={(val) => {
@@ -181,94 +277,51 @@ export default function ExploreScreen() {
                   }}
                   keyboardType="numeric"
                   placeholder="Any"
-                  style={{ borderWidth: 1, padding: 8, borderRadius: 8, marginTop: 8, marginBottom: 16 }}
+                  placeholderTextColor={colors.inkMuted}
+                  style={styles.modalInput}
                 />
 
-                <Text style={{ marginTop: 16 }}>Sort By:</Text>
-                <View style={{ flexDirection: 'row', marginTop: 8 }}>
-                  <TouchableOpacity onPress={() => setSortBy('distance')} style={{ marginRight: 12 }}>
-                    <Text style={{ color: sortBy === 'distance' ? '#007AFF' : '#000' }}>Distance</Text>
+                <Text style={styles.modalLabel}>Sort by</Text>
+                <View style={styles.chipRow}>
+                  <TouchableOpacity
+                    style={[styles.chip, sortBy === 'distance' && styles.chipOn]}
+                    onPress={() => setSortBy('distance')}
+                  >
+                    <Text style={[styles.chipText, sortBy === 'distance' && styles.chipTextOn]}>Distance</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setSortBy('rating')}>
-                    <Text style={{ color: sortBy === 'rating' ? '#007AFF' : '#000' }}>Rating</Text>
+                  <TouchableOpacity
+                    style={[styles.chip, sortBy === 'rating' && styles.chipOn]}
+                    onPress={() => setSortBy('rating')}
+                  >
+                    <Text style={[styles.chipText, sortBy === 'rating' && styles.chipTextOn]}>Rating</Text>
                   </TouchableOpacity>
                 </View>
 
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16 }}>
-                  <Text style={{ marginRight: 8 }}>Only show open cafes:</Text>
-                  <TouchableOpacity onPress={() => setShowOnlyOpen(!showOnlyOpen)}>
-                    <Text style={{ color: showOnlyOpen ? '#007AFF' : '#000' }}>{showOnlyOpen ? 'Yes' : 'No'}</Text>
+                <Text style={styles.modalLabel}>Availability</Text>
+                <View style={styles.chipRow}>
+                  <TouchableOpacity
+                    style={[styles.chip, !showOnlyOpen && styles.chipOn]}
+                    onPress={() => setShowOnlyOpen(false)}
+                  >
+                    <Text style={[styles.chipText, !showOnlyOpen && styles.chipTextOn]}>All cafes</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.chip, showOnlyOpen && styles.chipOn]}
+                    onPress={() => setShowOnlyOpen(true)}
+                  >
+                    <Text style={[styles.chipText, showOnlyOpen && styles.chipTextOn]}>Open now</Text>
                   </TouchableOpacity>
                 </View>
 
-                <Pressable style={{ marginTop: 24, backgroundColor: '#007AFF', padding: 12, borderRadius: 8 }} onPress={() => setShowFilterModal(false)}>
-                  <Text style={{ color: '#fff', textAlign: 'center' }}>Apply Filters</Text>
+                <Pressable style={[primaryButton, styles.applyBtn]} onPress={() => setShowFilterModal(false)}>
+                  <Text style={primaryButtonText}>Apply filters</Text>
                 </Pressable>
               </View>
             </View>
           </TouchableWithoutFeedback>
         </Modal>
-
-        <View style={styles.viewToggle}>
-          <TouchableOpacity style={[styles.viewToggleButton, viewMode === 'list' && styles.viewToggleButtonActive]} onPress={() => setViewMode('list')}>
-            <FontAwesome name="list" size={16} color={viewMode === 'list' ? '#fff' : '#007AFF'} />
-            <Text style={[styles.viewToggleText, viewMode === 'list' && styles.viewToggleTextActive]}>List</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.viewToggleButton, viewMode === 'map' && styles.viewToggleButtonActive]} onPress={() => setViewMode('map')}>
-            <FontAwesome name="map" size={16} color={viewMode === 'map' ? '#fff' : '#007AFF'} />
-            <Text style={[styles.viewToggleText, viewMode === 'map' && styles.viewToggleTextActive]}>Map</Text>
-          </TouchableOpacity>
-        </View>
-
-        {viewMode === 'list' ? (
-          <FlatList
-            data={cafes}
-            renderItem={renderCafeItem}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContainer}
-          />
-        ) : (
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            initialRegion={location ? {
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-              latitudeDelta: LATITUDE_DELTA,
-              longitudeDelta: LONGITUDE_DELTA,
-            } : undefined}
-            showsUserLocation
-            showsMyLocationButton={false}
-          >
-            {cafes.map((cafe) => (
-              <Marker
-                key={cafe.id}
-                coordinate={cafe.coordinates}
-                pinColor={cafe.isOpen ? "#4CAF50" : "#F44336"}
-              >
-                <Callout onPress={() => router.push(`/cafe/${cafe.id}`)}>
-                  <View style={styles.calloutContainer}>
-                    <Text style={styles.calloutTitle}>{cafe.name}</Text>
-                    <Text style={styles.calloutAddress}>{cafe.address}</Text>
-                    <View style={styles.calloutDetails}>
-                      <View style={styles.calloutRating}>
-                        <FontAwesome name="star" size={12} color="#FFD700" />
-                        <Text style={styles.calloutRatingText}>{cafe.rating}</Text>
-                      </View>
-                      <Text style={styles.calloutDistance}>{cafe.distance}</Text>
-                      <View style={[styles.calloutStatus, { backgroundColor: cafe.isOpen ? '#4CAF50' : '#F44336' }]}>
-                        <Text style={styles.calloutStatusText}>{cafe.isOpen ? 'Open' : 'Closed'}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.calloutTapText}>Tap for details</Text>
-                  </View>
-                </Callout>
-              </Marker>
-            ))}
-          </MapView>
-        )}
       </View>
-    </TouchableWithoutFeedback>
+    </GradientScreen>
   );
 }
 
@@ -276,112 +329,111 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 22,
   },
-  filtersContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
+  greet: {
+    marginTop: 8,
+    marginBottom: 18,
   },
-  errorText: {
-    color: '#F44336',
+  greetDate: {
+    ...overline(11),
+    letterSpacing: 3,
+  },
+  greetTitle: {
+    ...display(28),
+    marginTop: 8,
+  },
+  greetSub: {
+    fontFamily: fonts.light,
     fontSize: 14,
-    marginRight: 16,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
+    marginTop: 5,
   },
-  filterButton: {
+  notice: {
+    fontFamily: fonts.light,
+    fontSize: 12,
+    color: colors.inkMuted,
+    marginTop: 6,
+  },
+  searchRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-    borderWidth: 1,
-    borderColor: '#007AFF',
-    borderRadius: 8,
   },
-  filterButtonText: {
-    color: '#007AFF',
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  viewToggle: {
-    flexDirection: 'row',
-    marginTop: 16,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 20,
-    padding: 4,
-  },
-  viewToggleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
+  searchField: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.glassSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.25)',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+  },
+  searchPlaceholder: {
+    fontFamily: fonts.light,
+    fontSize: 14,
+    color: colors.inkMuted,
+    marginLeft: 10,
+  },
+  filterBtn: {
+    width: 46,
+    height: 46,
+    marginLeft: 10,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    borderWidth: 1,
+    borderColor: colors.sage,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  viewToggleButtonActive: {
-    backgroundColor: '#007AFF',
+  sect: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    marginBottom: 12,
   },
-  viewToggleText: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
+  sectTitle: {
+    ...display(18),
+    letterSpacing: 1.8,
   },
-  viewToggleTextActive: {
-    color: '#fff',
+  sectLink: {
+    ...overline(12),
+    letterSpacing: 1.7,
   },
   listContainer: {
-    padding: 16,
+    paddingBottom: 24,
   },
-  mapContainer: {
+  mapWrap: {
     flex: 1,
-    position: 'relative',
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    marginBottom: 16,
   },
   map: {
     width: '100%',
     height: '100%',
   },
-  mapButtonContainer: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-  },
-  myLocationButton: {
-    backgroundColor: '#fff',
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
   calloutContainer: {
     width: 200,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: colors.white,
+    borderRadius: 10,
     padding: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   calloutTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: fonts.display,
+    fontSize: 15,
+    letterSpacing: 0.6,
+    color: colors.ink,
     marginBottom: 4,
   },
   calloutAddress: {
+    fontFamily: fonts.light,
     fontSize: 12,
-    color: '#666',
+    color: colors.inkSoft,
     marginBottom: 8,
   },
   calloutDetails: {
@@ -395,29 +447,93 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   calloutRatingText: {
+    fontFamily: fonts.medium,
     fontSize: 12,
-    color: '#666',
+    color: colors.ink,
     marginLeft: 4,
   },
   calloutDistance: {
+    fontFamily: fonts.light,
     fontSize: 12,
-    color: '#666',
+    color: colors.inkSoft,
     marginRight: 8,
   },
-  calloutStatus: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+  calloutOpen: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: colors.sage,
   },
-  calloutStatusText: {
-    fontSize: 10,
-    color: '#fff',
-    fontWeight: 'bold',
+  calloutClosed: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: colors.inkMuted,
   },
   calloutTapText: {
-    fontSize: 12,
-    color: '#007AFF',
-    fontStyle: 'italic',
+    fontFamily: fonts.light,
+    fontSize: 11.5,
+    color: colors.sage,
     textAlign: 'center',
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(35,43,58,0.45)',
+    padding: 20,
+  },
+  modalCard: {
+    ...glassCard,
+    backgroundColor: '#F4F2F9',
+    padding: 22,
+  },
+  modalTitle: {
+    ...display(21),
+    marginBottom: 14,
+  },
+  modalLabel: {
+    ...overline(10.5),
+    color: colors.inkMuted,
+    marginTop: 14,
+    marginBottom: 8,
+  },
+  modalInput: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.ink,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.25)',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  chipRow: {
+    flexDirection: 'row',
+  },
+  chip: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.32)',
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    marginRight: 8,
+  },
+  chipOn: {
+    backgroundColor: colors.sage,
+    borderColor: colors.sage,
+  },
+  chipText: {
+    fontFamily: fonts.medium,
+    fontSize: 11.5,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+    color: colors.inkSoft,
+  },
+  chipTextOn: {
+    color: colors.white,
+    fontFamily: fonts.semibold,
+  },
+  applyBtn: {
+    marginTop: 24,
   },
 });

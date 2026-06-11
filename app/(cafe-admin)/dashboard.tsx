@@ -5,22 +5,22 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  useColorScheme,
-  Alert,
   RefreshControl,
   Dimensions,
 } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type FontAwesomeIconName = 'shopping-cart' | 'coffee' | 'star' | 'money';
+import { colors, fonts, glassCard, display, overline } from '../../lib/theme';
+import GradientScreen from '../../components/GradientScreen';
+
+type FeatherIconName = 'shopping-cart' | 'coffee' | 'star' | 'dollar-sign' | 'circle';
 
 interface DashboardCard {
   title: string;
   value: string | number;
-  icon: FontAwesomeIconName;
-  color: string;
+  icon: FeatherIconName;
   onPress: () => void;
 }
 
@@ -33,9 +33,15 @@ interface RecentActivity {
   status?: string;
 }
 
+function dateKicker(): string {
+  const now = new Date();
+  const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
+  const monthDay = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  return `${weekday} · ${monthDay}`;
+}
+
 export default function AdminDashboard() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
 
   const dashboardCards: DashboardCard[] = [
@@ -43,28 +49,24 @@ export default function AdminDashboard() {
       title: 'Today\'s Orders',
       value: '12',
       icon: 'shopping-cart',
-      color: '#007AFF',
       onPress: () => router.push('/orders'),
     },
     {
       title: 'Menu Items',
       value: '24',
       icon: 'coffee',
-      color: '#34C759',
       onPress: () => router.push('/menu'),
     },
     {
       title: 'New Reviews',
       value: '5',
       icon: 'star',
-      color: '#FF9500',
       onPress: () => router.push('/reviews'),
     },
     {
       title: 'Today\'s Revenue',
       value: '$1,234',
-      icon: 'money',
-      color: '#5856D6',
+      icon: 'dollar-sign',
       onPress: () => router.push('/analytics'),
     },
   ];
@@ -101,276 +103,281 @@ export default function AdminDashboard() {
     }, 2000);
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return '#FF9500';
-      case 'completed':
-        return '#34C759';
-      case 'cancelled':
-        return '#FF3B30';
-      default:
-        return '#8E8E93';
-    }
-  };
-
-  const getActivityIcon = (type: string) => {
+  const getActivityIcon = (type: string): FeatherIconName => {
     switch (type) {
       case 'order':
-        return { name: 'shopping-cart', color: '#007AFF' };
+        return 'shopping-cart';
       case 'review':
-        return { name: 'star', color: '#FF9500' };
+        return 'star';
       case 'menu':
-        return { name: 'coffee', color: '#34C759' };
+        return 'coffee';
       default:
-        return { name: 'circle', color: '#8E8E93' };
+        return 'circle';
     }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#000' : '#f8f8f8' }]}>
-      <Stack.Screen
-        options={{
-          headerTitle: "Dashboard",
-          headerStyle: {
-            backgroundColor: isDark ? '#000' : '#f8f8f8',
-          },
-          headerTintColor: isDark ? '#fff' : '#000',
-          headerTitleStyle: {
-            fontWeight: '700',
-            fontSize: 24,
-          },
-          headerShadowVisible: false,
-          headerRight: () => (
+    <GradientScreen>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sage} />
+          }
+        >
+          <View style={styles.greet}>
+            <View style={styles.greetText}>
+              <Text style={styles.greetDate}>{dateKicker()}</Text>
+              <Text style={styles.greetTitle}>Dashboard</Text>
+              <Text style={styles.greetSub}>Your bar at a glance.</Text>
+            </View>
             <TouchableOpacity
-              style={styles.settingsButton}
+              style={styles.settingsBtn}
               onPress={() => router.push('/settings')}
             >
-              <FontAwesome 
-                name="cog" 
-                size={24} 
-                color={isDark ? '#fff' : '#000'} 
-              />
+              <Feather name="settings" size={17} color={colors.ink} />
             </TouchableOpacity>
-          ),
-        }}
-      />
+          </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Quick Stats */}
-        <View style={styles.statsGrid}>
-          {dashboardCards.map((card, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.statCard,
-                { 
-                  backgroundColor: isDark ? '#1c1c1e' : '#fff',
-                  shadowColor: isDark ? '#000' : '#000',
-                }
-              ]}
-              onPress={card.onPress}
-            >
-              <LinearGradient
-                colors={[card.color, card.color + '80']}
-                style={styles.iconContainer}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+          {/* Quick Stats */}
+          <View style={styles.statsGrid}>
+            {dashboardCards.map((card, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.statCard}
+                onPress={card.onPress}
+                activeOpacity={0.7}
               >
-                <FontAwesome name={card.icon} size={24} color="#fff" />
-              </LinearGradient>
-              <Text style={[styles.statValue, { color: isDark ? '#fff' : '#000' }]}>
-                {card.value}
-              </Text>
-              <Text style={[styles.statTitle, { color: isDark ? '#999' : '#666' }]}>
-                {card.title}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+                <Text style={styles.statLabel}>{card.title}</Text>
+                <View style={styles.statValueRow}>
+                  <Feather name={card.icon} size={15} color={colors.sage} />
+                  <Text style={styles.statValue}>{card.value}</Text>
+                </View>
+                <Feather name="chevron-right" size={13} color={colors.inkMuted} style={styles.statGo} />
+              </TouchableOpacity>
+            ))}
+          </View>
 
-        {/* Recent Activity */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDark ? '#fff' : '#000' }]}>
-            Recent Activity
-          </Text>
-          {recentActivity.map((activity) => (
-            <TouchableOpacity
-              key={activity.id}
-              style={[
-                styles.activityCard,
-                { 
-                  backgroundColor: isDark ? '#1c1c1e' : '#fff',
-                  shadowColor: isDark ? '#000' : '#000',
-                }
-              ]}
-              onPress={() => {
-                switch (activity.type) {
-                  case 'order':
-                    router.push('/orders');
-                    break;
-                  case 'review':
-                    router.push('/reviews');
-                    break;
-                  case 'menu':
-                    router.push('/menu');
-                    break;
-                }
-              }}
-            >
-              <View style={[
-                styles.activityIcon,
-                { backgroundColor: getActivityIcon(activity.type).color + '20' }
-              ]}>
-                <FontAwesome
-                  name={getActivityIcon(activity.type).name as any}
-                  size={20}
-                  color={getActivityIcon(activity.type).color}
-                />
-              </View>
-              <View style={styles.activityContent}>
-                <Text style={[styles.activityTitle, { color: isDark ? '#fff' : '#000' }]}>
-                  {activity.title}
-                </Text>
-                <Text style={[styles.activityDesc, { color: isDark ? '#999' : '#666' }]}>
-                  {activity.description}
-                </Text>
-              </View>
-              <View style={styles.activityMeta}>
-                <Text style={[styles.activityTime, { color: isDark ? '#999' : '#666' }]}>
-                  {activity.time}
-                </Text>
-                {activity.status && (
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      { backgroundColor: getStatusColor(activity.status) + '20' }
-                    ]}
-                  >
-                    <Text style={[
-                      styles.statusText,
-                      { color: getStatusColor(activity.status) }
-                    ]}>
-                      {activity.status}
+          {/* Recent Activity */}
+          <Text style={styles.sectTitle}>Recent activity</Text>
+          <View style={styles.activityCard}>
+            {recentActivity.map((activity, index) => {
+              const isNewOrder = activity.type === 'order' && activity.status === 'pending';
+              return (
+                <TouchableOpacity
+                  key={activity.id}
+                  style={[
+                    styles.activityRow,
+                    index < recentActivity.length - 1 && styles.activityRowDivider,
+                  ]}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    switch (activity.type) {
+                      case 'order':
+                        router.push('/orders');
+                        break;
+                      case 'review':
+                        router.push('/reviews');
+                        break;
+                      case 'menu':
+                        router.push('/menu');
+                        break;
+                    }
+                  }}
+                >
+                  <View style={[styles.activityIcon, isNewOrder && styles.activityIconDawn]}>
+                    <Feather
+                      name={getActivityIcon(activity.type)}
+                      size={15}
+                      color={isNewOrder ? colors.dawnInk : colors.sage}
+                    />
+                  </View>
+                  <View style={styles.activityContent}>
+                    <Text style={styles.activityTitle}>{activity.title}</Text>
+                    <Text style={styles.activityDesc} numberOfLines={1}>
+                      {activity.description}
                     </Text>
                   </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
-    </View>
+                  <View style={styles.activityMeta}>
+                    <Text style={styles.activityTime}>{activity.time}</Text>
+                    {activity.status && (
+                      <View style={[styles.statusPill, isNewOrder && styles.statusPillDawn]}>
+                        <Text style={[styles.statusPillText, isNewOrder && styles.statusPillTextDawn]}>
+                          {isNewOrder ? 'New' : activity.status}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </ScrollView>
+      </View>
+    </GradientScreen>
   );
 }
 
 const { width } = Dimensions.get('window');
-const cardWidth = (width - 48) / 2;
+const cardWidth = (width - 54) / 2;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  scrollView: {
-    flex: 1,
+    paddingHorizontal: 22,
   },
   scrollContent: {
-    padding: 16,
+    paddingBottom: 28,
   },
-  settingsButton: {
-    padding: 8,
-    marginRight: 8,
+  greet: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 8,
+    marginBottom: 18,
+  },
+  greetText: {
+    flex: 1,
+  },
+  greetDate: {
+    ...overline(11),
+    letterSpacing: 3,
+  },
+  greetTitle: {
+    ...display(26),
+    marginTop: 8,
+  },
+  greetSub: {
+    fontFamily: fonts.light,
+    fontSize: 12.5,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
+    marginTop: 4,
+  },
+  settingsBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    backgroundColor: colors.glassSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
-    marginBottom: 24,
+    gap: 10,
   },
   statCard: {
-    width: cardWidth,
-    padding: 16,
-    borderRadius: 16,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
+    ...glassCard,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
+    width: cardWidth,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
   },
-  statValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 4,
+  statLabel: {
+    ...overline(9.5),
+    color: colors.inkMuted,
+    letterSpacing: 1.6,
   },
-  statTitle: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
-  activityCard: {
+  statValueRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    marginTop: 7,
+  },
+  statValue: {
+    ...display(23),
+    marginLeft: 7,
+  },
+  statGo: {
+    position: 'absolute',
+    top: 13,
+    right: 12,
+  },
+  sectTitle: {
+    ...display(16),
+    letterSpacing: 1.9,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  activityCard: {
+    ...glassCard,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 11,
+  },
+  activityRowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairlineFaint,
   },
   activityIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    backgroundColor: colors.sageTint,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityIconDawn: {
+    borderColor: 'rgba(229,169,79,0.5)',
+    backgroundColor: 'rgba(229,169,79,0.14)',
   },
   activityContent: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 11,
+    marginRight: 8,
   },
   activityTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontFamily: fonts.medium,
+    fontSize: 12.5,
+    letterSpacing: 0.4,
+    color: colors.ink,
   },
   activityDesc: {
-    fontSize: 14,
+    fontFamily: fonts.light,
+    fontSize: 11,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
+    marginTop: 2,
   },
   activityMeta: {
     alignItems: 'flex-end',
   },
   activityTime: {
-    fontSize: 13,
-    marginBottom: 4,
+    fontFamily: fonts.light,
+    fontSize: 10.5,
+    letterSpacing: 0.3,
+    color: colors.inkMuted,
   },
-  statusBadge: {
+  statusPill: {
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.hairlineFaint,
+    backgroundColor: colors.glassSoft,
+    marginTop: 5,
   },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
+  statusPillDawn: {
+    borderColor: 'rgba(229,169,79,0.5)',
+    backgroundColor: 'rgba(229,169,79,0.14)',
   },
-}); 
+  statusPillText: {
+    ...overline(9),
+    letterSpacing: 1.2,
+    color: colors.inkMuted,
+  },
+  statusPillTextDawn: {
+    color: colors.dawnInk,
+  },
+});

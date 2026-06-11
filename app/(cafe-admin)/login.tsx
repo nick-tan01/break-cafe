@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { useColorScheme } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { supabase } from '../../lib/supabase';
+import { colors, fonts, radius, glassCard, display, overline, primaryButton, primaryButtonText } from '../../lib/theme';
+import GradientScreen from '../../components/GradientScreen';
 
 export default function AdminLogin() {
-  const colorScheme = useColorScheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const isDark = colorScheme === 'dark';
-  const textColor = isDark ? '#fff' : '#000';
-  const bgColor = isDark ? '#000' : '#fff';
-  const inputBgColor = isDark ? '#1c1c1e' : '#f2f2f7';
 
   const handleLogin = async () => {
     setLoading(true);
@@ -48,115 +45,155 @@ export default function AdminLogin() {
   };
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerTitle: "BREAK Admin Login",
-          headerStyle: {
-            backgroundColor: bgColor,
-          },
-          headerTintColor: textColor,
-          headerTitleStyle: {
-            fontWeight: '600',
-          },
-          headerShadowVisible: false,
-        }}
-      />
-      <View style={[styles.container, { backgroundColor: bgColor }]}>
-        <View style={styles.logoContainer}>
-          <FontAwesome name="coffee" size={64} color="#007AFF" />
-          <Text style={[styles.title, { color: textColor }]}>BREAK Admin Portal</Text>
-        </View>
-
-        <View style={styles.formContainer}>
-          <View style={[styles.inputContainer, { backgroundColor: inputBgColor }]}>
-            <FontAwesome name="envelope" size={20} color="#666" style={styles.inputIcon} />
-            <TextInput
-              style={[styles.input, { color: textColor }]}
-              placeholder="Email"
-              placeholderTextColor="#666"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-            />
+    <GradientScreen>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={[styles.container, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }]}>
+        <View style={styles.body}>
+          <View style={styles.brand}>
+            <View style={styles.brandMark}>
+              <Feather name="sunrise" size={26} color={colors.sage} />
+            </View>
+            <Text style={styles.kicker}>BREAK · CAFE PARTNERS</Text>
+            <Text style={styles.headline}>Owner sign in</Text>
+            <Text style={styles.sub}>Manage your bar, menu, and morning queue.</Text>
           </View>
 
-          <View style={[styles.inputContainer, { backgroundColor: inputBgColor }]}>
-            <FontAwesome name="lock" size={20} color="#666" style={styles.inputIcon} />
-            <TextInput
-              style={[styles.input, { color: textColor }]}
-              placeholder="Password"
-              placeholderTextColor="#666"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
+          <View style={styles.card}>
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>Email</Text>
+              <TextInput
+                style={styles.fieldInput}
+                placeholder="you@yourcafe.com"
+                placeholderTextColor={colors.inkMuted}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+              />
+            </View>
 
-          <TouchableOpacity
-            style={[styles.loginButton, { opacity: (!email || !password || loading) ? 0.7 : 1 }]}
-            onPress={handleLogin}
-            disabled={!email || !password || loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.loginButtonText}>Login</Text>
-            )}
-          </TouchableOpacity>
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>Password</Text>
+              <TextInput
+                style={styles.fieldInput}
+                placeholder="Enter your password"
+                placeholderTextColor={colors.inkMuted}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[primaryButton, styles.signInBtn, (!email || !password || loading) && styles.btnDisabled]}
+              onPress={handleLogin}
+              disabled={!email || !password || loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <Text style={primaryButtonText}>Sign in</Text>
+              )}
+            </TouchableOpacity>
+
+            <Text style={styles.help}>Access is limited to registered cafe owners.</Text>
+          </View>
         </View>
+
+        <Text style={styles.foot}>Break · Cafe Partners</Text>
       </View>
-    </>
+    </GradientScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 22,
+  },
+  body: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  brand: {
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  brandMark: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.round,
+    backgroundColor: colors.glassSoft,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
+  kicker: {
+    ...overline(11),
+    letterSpacing: 3,
+    textAlign: 'center',
+  },
+  headline: {
+    ...display(26),
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  sub: {
+    fontFamily: fonts.light,
+    fontSize: 13.5,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  card: {
+    ...glassCard,
     padding: 20,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginTop: 60,
-    marginBottom: 40,
+  field: {
+    backgroundColor: colors.glassSoft,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    borderRadius: radius.control,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 12,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginTop: 16,
+  fieldLabel: {
+    ...overline(10.5),
+    color: colors.inkMuted,
+    marginBottom: 6,
   },
-  formContainer: {
-    width: '100%',
+  fieldInput: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.ink,
+    padding: 0,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    marginBottom: 16,
-    padding: 12,
+  signInBtn: {
+    marginTop: 4,
   },
-  inputIcon: {
-    marginRight: 12,
+  btnDisabled: {
+    opacity: 0.55,
   },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    padding: 4,
+  help: {
+    fontFamily: fonts.light,
+    fontSize: 11.5,
+    letterSpacing: 0.4,
+    color: colors.inkMuted,
+    textAlign: 'center',
+    marginTop: 14,
+    lineHeight: 18,
   },
-  loginButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  foot: {
+    ...overline(10),
+    color: colors.inkMuted,
+    letterSpacing: 3,
+    textAlign: 'center',
   },
 });

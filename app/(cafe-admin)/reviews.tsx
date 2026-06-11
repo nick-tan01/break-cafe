@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, TextInput, Modal, Alert, FlatList, Dimensions } from 'react-native';
-import { Stack } from 'expo-router';
-import { useColorScheme } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, TextInput, Modal, Alert, FlatList } from 'react-native';
+import { FontAwesome, Feather } from '@expo/vector-icons';
+
+import { colors, fonts, glassCard, display, overline } from '../../lib/theme';
+import GradientScreen from '../../components/GradientScreen';
 
 interface Reply {
   id: string;
@@ -76,17 +76,11 @@ const FILTER_RATINGS = [
 ];
 
 export default function ReviewsManagement() {
-  const colorScheme = useColorScheme();
   const [reviews, setReviews] = useState<Review[]>(MOCK_REVIEWS);
   const [selectedRating, setSelectedRating] = useState('all');
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [replyText, setReplyText] = useState('');
   const [isReplyModalVisible, setIsReplyModalVisible] = useState(false);
-
-  const isDark = colorScheme === 'dark';
-  const textColor = isDark ? '#fff' : '#000';
-  const bgColor = isDark ? '#000' : '#fff';
-  const cardBgColor = isDark ? '#1c1c1e' : '#f2f2f7';
 
   const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
   const ratingCounts = reviews.reduce((acc, review) => {
@@ -94,7 +88,7 @@ export default function ReviewsManagement() {
     return acc;
   }, {} as Record<number, number>);
 
-  const filteredReviews = reviews.filter(review => 
+  const filteredReviews = reviews.filter(review =>
     selectedRating === 'all' || review.rating === parseInt(selectedRating)
   );
 
@@ -145,7 +139,8 @@ export default function ReviewsManagement() {
         key={index}
         name={index < rating ? 'star' : 'star-o'}
         size={16}
-        color="#FFD700"
+        color={index < rating ? colors.gold : colors.inkMuted}
+        style={styles.star}
       />
     ));
   };
@@ -154,40 +149,14 @@ export default function ReviewsManagement() {
     const count = item.id === 'all'
       ? reviews.length
       : reviews.filter(review => review.rating === parseInt(item.id)).length;
+    const isOn = selectedRating === item.id;
 
     return (
       <TouchableOpacity
-        style={[
-          styles.filterTag,
-          { 
-            backgroundColor: isDark ? '#2c2c2e' : '#f2f2f7',
-            borderWidth: 1,
-            borderColor: isDark ? '#3c3c3e' : '#e5e5e5'
-          },
-          selectedRating === item.id && {
-            backgroundColor: isDark ? '#1c1c1e' : '#fff',
-            borderColor: '#007AFF'
-          }
-        ]}
+        style={[styles.filterChip, isOn && styles.filterChipOn]}
         onPress={() => setSelectedRating(item.id)}
       >
-        <FontAwesome 
-          name={item.icon as any} 
-          size={16} 
-          color={selectedRating === item.id 
-            ? '#007AFF'
-            : isDark ? '#fff' : '#000'
-          } 
-          style={styles.filterIcon} 
-        />
-        <Text style={[
-          styles.filterTagText,
-          { 
-            color: selectedRating === item.id 
-              ? '#007AFF'
-              : isDark ? '#fff' : '#000'
-          }
-        ]}>
+        <Text style={[styles.filterChipText, isOn && styles.filterChipTextOn]}>
           {item.label} ({count})
         </Text>
       </TouchableOpacity>
@@ -195,28 +164,16 @@ export default function ReviewsManagement() {
   };
 
   const renderReviewCard = ({ item: review }: { item: Review }) => (
-    <View 
-      style={[
-        styles.reviewCard,
-        { 
-          backgroundColor: isDark ? '#1c1c1e' : '#fff',
-          shadowColor: isDark ? '#000' : '#000',
-        }
-      ]}
-    >
+    <View style={styles.reviewCard}>
       <View style={styles.reviewHeader}>
         <View style={styles.userInfo}>
-          <Image 
-            source={{ uri: review.userImage }} 
-            style={styles.userImage} 
+          <Image
+            source={{ uri: review.userImage }}
+            style={styles.userImage}
           />
           <View>
-            <Text style={[styles.userName, { color: isDark ? '#fff' : '#000' }]}>
-              {review.userName}
-            </Text>
-            <Text style={[styles.reviewDate, { color: isDark ? '#999' : '#666' }]}>
-              {review.date}
-            </Text>
+            <Text style={styles.userName}>{review.userName}</Text>
+            <Text style={styles.reviewDate}>{review.date}</Text>
           </View>
         </View>
         <View style={styles.ratingContainer}>
@@ -224,20 +181,18 @@ export default function ReviewsManagement() {
         </View>
       </View>
 
-      <Text style={[styles.reviewText, { color: isDark ? '#fff' : '#000' }]}>
-        {review.text}
-      </Text>
+      <Text style={styles.reviewText}>{review.text}</Text>
 
       {review.images && review.images.length > 0 && (
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.imagesContainer}
         >
           {review.images.map((image, index) => (
-            <Image 
-              key={index} 
-              source={{ uri: image }} 
+            <Image
+              key={index}
+              source={{ uri: image }}
               style={styles.reviewImage}
             />
           ))}
@@ -245,32 +200,20 @@ export default function ReviewsManagement() {
       )}
 
       {review.reply ? (
-        <View style={[
-          styles.replyContainer,
-          { backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8' }
-        ]}>
+        <View style={styles.replyContainer}>
           <View style={styles.replyHeader}>
-            <FontAwesome name="reply" size={16} color={isDark ? '#999' : '#666'} />
-            <Text style={[styles.replyLabel, { color: isDark ? '#999' : '#666' }]}>
-              Your Reply
-            </Text>
-            <Text style={[styles.replyDate, { color: isDark ? '#999' : '#666' }]}>
-              {review.reply.date}
-            </Text>
+            <Feather name="corner-down-right" size={14} color={colors.sage} />
+            <Text style={styles.replyLabel}>Your Reply</Text>
+            <Text style={styles.replyDate}>{review.reply.date}</Text>
           </View>
-          <Text style={[styles.replyText, { color: isDark ? '#fff' : '#000' }]}>
-            {review.reply.text}
-          </Text>
+          <Text style={styles.replyText}>{review.reply.text}</Text>
         </View>
       ) : (
         <TouchableOpacity
-          style={[
-            styles.replyButton,
-            { backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8' }
-          ]}
+          style={styles.replyButton}
           onPress={() => handleReply(review)}
         >
-          <FontAwesome name="reply" size={16} color="#007AFF" />
+          <Feather name="corner-up-left" size={15} color={colors.sage} />
           <Text style={styles.replyButtonText}>Reply to Review</Text>
         </TouchableOpacity>
       )}
@@ -278,66 +221,41 @@ export default function ReviewsManagement() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#000' : '#f8f8f8' }]}>
-      <Stack.Screen
-        options={{
-          headerTitle: "Reviews Management",
-          headerStyle: {
-            backgroundColor: isDark ? '#000' : '#f8f8f8',
-          },
-          headerTintColor: isDark ? '#fff' : '#000',
-          headerTitleStyle: {
-            fontWeight: '600',
-          },
-          headerBackTitle: "",
-        }}
-      />
-
+    <GradientScreen>
       <FlatList
         ListHeaderComponent={
           <>
             {/* Rating Overview */}
-            <View style={[
-              styles.overviewCard,
-              { 
-                backgroundColor: isDark ? '#1c1c1e' : '#fff',
-                shadowColor: isDark ? '#000' : '#000',
-              }
-            ]}>
+            <View style={styles.overviewCard}>
               <View style={styles.overviewHeader}>
                 <View style={styles.overviewRating}>
-                  <Text style={[styles.averageRating, { color: isDark ? '#fff' : '#000' }]}>
+                  <Text style={styles.averageRating}>
                     {averageRating.toFixed(1)}
                   </Text>
                   <View style={styles.starsContainer}>
                     {renderStars(Math.round(averageRating))}
                   </View>
-                  <Text style={[styles.totalReviews, { color: isDark ? '#999' : '#666' }]}>
+                  <Text style={styles.totalReviews}>
                     {reviews.length} total reviews
                   </Text>
                 </View>
                 <View style={styles.ratingBreakdown}>
                   {[5, 4, 3, 2, 1].map(rating => (
-                    <TouchableOpacity 
-                      key={rating} 
+                    <TouchableOpacity
+                      key={rating}
                       style={styles.ratingRow}
                       onPress={() => setSelectedRating(rating.toString())}
                     >
-                      <Text style={[styles.ratingLabel, { color: isDark ? '#fff' : '#000' }]}>
-                        {rating}
-                      </Text>
+                      <Text style={styles.ratingLabel}>{rating}</Text>
                       <View style={styles.ratingBarContainer}>
-                        <View 
+                        <View
                           style={[
                             styles.ratingBar,
-                            { 
-                              width: `${((ratingCounts[rating] || 0) / reviews.length) * 100}%`,
-                              backgroundColor: rating >= 4 ? '#4CAF50' : rating >= 3 ? '#FFC107' : '#FF5722'
-                            }
-                          ]} 
+                            { width: `${((ratingCounts[rating] || 0) / reviews.length) * 100}%` }
+                          ]}
                         />
                       </View>
-                      <Text style={[styles.ratingCount, { color: isDark ? '#999' : '#666' }]}>
+                      <Text style={styles.ratingCount}>
                         {ratingCounts[rating] || 0}
                       </Text>
                     </TouchableOpacity>
@@ -362,6 +280,7 @@ export default function ReviewsManagement() {
         renderItem={renderReviewCard}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.reviewsList}
+        showsVerticalScrollIndicator={false}
       />
 
       {/* Reply Modal */}
@@ -371,34 +290,26 @@ export default function ReviewsManagement() {
         transparent={true}
       >
         <View style={styles.modalContainer}>
-          <View style={[
-            styles.modalContent,
-            { 
-              backgroundColor: isDark ? '#1c1c1e' : '#fff',
-              shadowColor: isDark ? '#000' : '#000',
-            }
-          ]}>
+          <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: isDark ? '#fff' : '#000' }]}>
-                Reply to Review
-              </Text>
+              <Text style={styles.modalTitle}>Reply to Review</Text>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setIsReplyModalVisible(false)}
               >
-                <FontAwesome name="close" size={24} color={isDark ? '#fff' : '#666'} />
+                <Feather name="x" size={22} color={colors.inkSoft} />
               </TouchableOpacity>
             </View>
 
             {selectedReview && (
               <View style={styles.selectedReview}>
                 <View style={styles.selectedReviewHeader}>
-                  <Image 
-                    source={{ uri: selectedReview.userImage }} 
-                    style={styles.selectedReviewUserImage} 
+                  <Image
+                    source={{ uri: selectedReview.userImage }}
+                    style={styles.selectedReviewUserImage}
                   />
                   <View>
-                    <Text style={[styles.selectedReviewUserName, { color: isDark ? '#fff' : '#000' }]}>
+                    <Text style={styles.selectedReviewUserName}>
                       {selectedReview.userName}
                     </Text>
                     <View style={styles.selectedReviewRating}>
@@ -406,41 +317,28 @@ export default function ReviewsManagement() {
                     </View>
                   </View>
                 </View>
-                <Text style={[styles.selectedReviewText, { color: isDark ? '#999' : '#666' }]}>
+                <Text style={styles.selectedReviewText}>
                   {selectedReview.text}
                 </Text>
               </View>
             )}
 
             <TextInput
-              style={[
-                styles.replyInput,
-                { 
-                  color: isDark ? '#fff' : '#000',
-                  backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8',
-                  borderColor: isDark ? '#3c3c3e' : '#e5e5e5'
-                }
-              ]}
+              style={styles.replyInput}
               value={replyText}
               onChangeText={setReplyText}
               placeholder="Write your reply..."
-              placeholderTextColor={isDark ? '#999' : '#666'}
+              placeholderTextColor={colors.inkMuted}
               multiline
               numberOfLines={4}
             />
 
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={[
-                  styles.cancelButton,
-                  { backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8' }
-                ]}
+                style={styles.cancelButton}
                 onPress={() => setIsReplyModalVisible(false)}
               >
-                <Text style={[
-                  styles.cancelButtonText,
-                  { color: isDark ? '#fff' : '#666' }
-                ]}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
@@ -456,24 +354,15 @@ export default function ReviewsManagement() {
           </View>
         </View>
       </Modal>
-    </View>
+    </GradientScreen>
   );
 }
 
-const { width } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   overviewCard: {
-    margin: 16,
-    padding: 20,
-    borderRadius: 16,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    ...glassCard,
+    borderRadius: 12,
+    padding: 17,
   },
   overviewHeader: {
     flexDirection: 'row',
@@ -482,92 +371,108 @@ const styles = StyleSheet.create({
   },
   overviewRating: {
     alignItems: 'center',
-    marginRight: 24,
+    marginRight: 20,
   },
   averageRating: {
-    fontSize: 48,
-    fontWeight: '700',
-    marginBottom: 4,
+    ...display(40),
+    marginBottom: 6,
   },
   starsContainer: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 6,
+  },
+  star: {
+    marginHorizontal: 1,
   },
   totalReviews: {
-    fontSize: 14,
+    fontFamily: fonts.light,
+    fontSize: 12,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
   },
   ratingBreakdown: {
     flex: 1,
+    justifyContent: 'center',
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 7,
   },
   ratingLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    width: 24,
+    fontFamily: fonts.medium,
+    fontSize: 12.5,
+    color: colors.ink,
+    width: 18,
   },
   ratingBarContainer: {
     flex: 1,
-    height: 8,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    borderRadius: 4,
+    height: 6,
+    backgroundColor: colors.hairlineFaint,
+    borderRadius: 3,
     marginHorizontal: 8,
     overflow: 'hidden',
   },
   ratingBar: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 3,
+    backgroundColor: colors.sage,
   },
   ratingCount: {
-    fontSize: 14,
-    width: 24,
+    fontFamily: fonts.light,
+    fontSize: 12,
+    color: colors.inkMuted,
+    width: 20,
     textAlign: 'right',
   },
   filterList: {
-    marginBottom: 8,
+    marginHorizontal: -18,
+    marginTop: 13,
+    marginBottom: 13,
   },
   filterListContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
   },
-  filterTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 12,
-    minWidth: 100,
-    justifyContent: 'center',
-  },
-  filterIcon: {
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.32)',
+    backgroundColor: 'rgba(255,255,255,0.45)',
     marginRight: 8,
-    width: 16,
-    textAlign: 'center',
   },
-  filterTagText: {
-    fontSize: 15,
-    fontWeight: '600',
+  filterChipOn: {
+    backgroundColor: colors.sage,
+    borderColor: colors.sage,
+  },
+  filterChipText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: colors.inkSoft,
+  },
+  filterChipTextOn: {
+    color: colors.white,
+    fontFamily: fonts.semibold,
   },
   reviewsList: {
-    padding: 16,
+    padding: 18,
+    paddingTop: 14,
+    paddingBottom: 32,
   },
   reviewCard: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    ...glassCard,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 13,
   },
   reviewHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 11,
   },
   userInfo: {
     flexDirection: 'row',
@@ -577,21 +482,31 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
     marginRight: 12,
   },
   userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    letterSpacing: 0.5,
+    color: colors.ink,
+    marginBottom: 3,
   },
   reviewDate: {
-    fontSize: 14,
+    fontFamily: fonts.light,
+    fontSize: 12,
+    letterSpacing: 0.2,
+    color: colors.inkMuted,
   },
   ratingContainer: {
     flexDirection: 'row',
   },
   reviewText: {
-    fontSize: 15,
+    fontFamily: fonts.light,
+    fontSize: 13.5,
+    letterSpacing: 0.2,
+    color: colors.ink,
     lineHeight: 20,
     marginBottom: 12,
   },
@@ -601,57 +516,69 @@ const styles = StyleSheet.create({
   reviewImage: {
     width: 120,
     height: 120,
-    borderRadius: 8,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
     marginRight: 8,
   },
   replyContainer: {
+    backgroundColor: colors.sageTint,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    borderRadius: 10,
     padding: 12,
-    borderRadius: 12,
   },
   replyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 7,
   },
   replyLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 8,
+    ...overline(10),
+    letterSpacing: 1.6,
+    marginLeft: 7,
     marginRight: 'auto',
   },
   replyDate: {
-    fontSize: 12,
+    fontFamily: fonts.light,
+    fontSize: 11.5,
+    color: colors.inkMuted,
   },
   replyText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontFamily: fonts.light,
+    fontSize: 13,
+    letterSpacing: 0.2,
+    color: colors.ink,
+    lineHeight: 19,
   },
   replyButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
-    borderRadius: 12,
+    paddingVertical: 11,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    backgroundColor: colors.glassSoft,
   },
   replyButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#007AFF',
+    fontFamily: fonts.semibold,
+    fontSize: 11,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    color: colors.sage,
     marginLeft: 8,
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(35,43,58,0.45)',
   },
   modalContent: {
+    backgroundColor: colors.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '90%',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -659,11 +586,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    borderBottomColor: colors.hairlineFaint,
   },
   modalTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    ...display(18),
+    letterSpacing: 1.6,
   },
   closeButton: {
     padding: 4,
@@ -671,7 +598,7 @@ const styles = StyleSheet.create({
   selectedReview: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    borderBottomColor: colors.hairlineFaint,
   },
   selectedReviewHeader: {
     flexDirection: 'row',
@@ -682,26 +609,38 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
     marginRight: 12,
   },
   selectedReviewUserName: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    letterSpacing: 0.4,
+    color: colors.ink,
+    marginBottom: 3,
   },
   selectedReviewRating: {
     flexDirection: 'row',
   },
   selectedReviewText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontFamily: fonts.light,
+    fontSize: 13,
+    letterSpacing: 0.2,
+    color: colors.inkSoft,
+    lineHeight: 19,
   },
   replyInput: {
     margin: 20,
-    padding: 12,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    fontSize: 16,
+    borderColor: colors.sageBorder,
+    backgroundColor: colors.glassSoft,
+    fontFamily: fonts.light,
+    fontSize: 14,
+    color: colors.ink,
     minHeight: 100,
     textAlignVertical: 'top',
   },
@@ -711,26 +650,34 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
+    borderTopColor: colors.hairlineFaint,
   },
   cancelButton: {
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(35,43,58,0.2)',
+    backgroundColor: colors.glassSoft,
   },
   cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    color: colors.inkSoft,
   },
   submitButton: {
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    backgroundColor: '#007AFF',
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    backgroundColor: colors.sage,
   },
   submitButtonText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    color: colors.white,
   },
-}); 
+});

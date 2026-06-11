@@ -1,9 +1,11 @@
 import { StyleSheet, View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { useColorScheme } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { useState, useEffect } from 'react';
+
 import { supabase } from '../../lib/supabase';
+import { colors, fonts, radius, glassCard, display, primaryButton, primaryButtonText } from '../../lib/theme';
+import GradientScreen from '../../components/GradientScreen';
 
 type OrderStatus = 'pending' | 'accepted' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 
@@ -28,7 +30,6 @@ interface Order {
 
 export default function OrderDetailsScreen() {
   const { id } = useLocalSearchParams();
-  const colorScheme = useColorScheme();
   const [order, setOrder] = useState<Order | null>(null);
 
   useEffect(() => {
@@ -55,20 +56,21 @@ export default function OrderDetailsScreen() {
     loadOrder();
   }, [id]);
 
+  // Active statuses stay sage; settled orders go quiet.
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
       case 'pending':
-        return '#FF9500';
+        return colors.sage;
       case 'accepted':
-        return '#007AFF';
+        return colors.sage;
       case 'preparing':
-        return '#FFA500';
+        return colors.sage;
       case 'ready':
-        return '#4CAF50';
+        return colors.sage;
       case 'completed':
-        return '#666';
+        return colors.inkMuted;
       case 'cancelled':
-        return '#FF0000';
+        return colors.inkMuted;
     }
   };
 
@@ -89,41 +91,36 @@ export default function OrderDetailsScreen() {
     }
   };
 
+  const screenOptions = {
+    title: 'Order Details',
+    headerStyle: {
+      backgroundColor: colors.gradient[0],
+    },
+    headerTintColor: colors.ink,
+    headerTitleStyle: {
+      fontFamily: fonts.display,
+      fontSize: 18,
+    },
+    headerShadowVisible: false,
+  };
+
   if (!order) {
     return (
-      <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }]}>
-        <Stack.Screen
-          options={{
-            title: 'Order Details',
-            headerStyle: {
-              backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
-            },
-            headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
-          }}
-        />
+      <GradientScreen>
+        <Stack.Screen options={screenOptions} />
         <View style={styles.loadingState}>
-          <FontAwesome name="spinner" size={48} color="#666" />
-          <Text style={[styles.loadingText, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            Loading order details...
-          </Text>
+          <Feather name="loader" size={40} color={colors.inkMuted} />
+          <Text style={styles.loadingText}>Loading order details...</Text>
         </View>
-      </View>
+      </GradientScreen>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }]}>
-      <Stack.Screen
-        options={{
-          title: 'Order Details',
-          headerStyle: {
-            backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
-          },
-          headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
-        }}
-      />
+    <GradientScreen>
+      <Stack.Screen options={screenOptions} />
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {order.cafes?.profile_image_url ? (
           <Image
             source={{ uri: order.cafes.profile_image_url }}
@@ -131,109 +128,97 @@ export default function OrderDetailsScreen() {
           />
         ) : (
           <View style={[styles.cafeImage, styles.cafeImagePlaceholder]}>
-            <FontAwesome name="coffee" size={48} color="#666" />
+            <Feather name="coffee" size={44} color={colors.inkMuted} />
           </View>
         )}
 
-        <View style={styles.section}>
-          <Text style={[styles.cafeName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            {order.cafes?.name ?? 'Cafe'}
-          </Text>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) }]}>
-            <Text style={styles.statusText}>{getStatusText(order.status)}</Text>
+        <View style={styles.body}>
+          <View style={styles.card}>
+            <Text style={styles.cafeName}>{order.cafes?.name ?? 'Cafe'}</Text>
+            <View style={[styles.statusBadge, { borderColor: getStatusColor(order.status) }]}>
+              <Text style={[styles.statusText, { color: getStatusColor(order.status) }]}>
+                {getStatusText(order.status)}
+              </Text>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.section}>
-          <View style={styles.infoRow}>
-            <FontAwesome name="calendar" size={16} color={colorScheme === 'dark' ? '#fff' : '#666'} />
-            <Text style={[styles.infoText, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-              {new Date(order.created_at).toLocaleDateString()}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <FontAwesome name="clock-o" size={16} color={colorScheme === 'dark' ? '#fff' : '#666'} />
-            <Text style={[styles.infoText, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-              {order.pickup_time
-                ? `Pickup at ${new Date(order.pickup_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                : 'Pickup in 15-20 min'}
-            </Text>
-          </View>
-          {order.notes ? (
+          <View style={styles.card}>
             <View style={styles.infoRow}>
-              <FontAwesome name="sticky-note-o" size={16} color={colorScheme === 'dark' ? '#fff' : '#666'} />
-              <Text style={[styles.infoText, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-                {order.notes}
+              <Feather name="calendar" size={15} color={colors.sage} />
+              <Text style={styles.infoText}>
+                {new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </Text>
             </View>
-          ) : null}
-        </View>
-
-        <View style={[styles.section, styles.itemsSection]}>
-          <Text style={[styles.sectionTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            Order Items
-          </Text>
-          {order.order_items.map((item, index) => (
-            <View key={index} style={styles.orderItem}>
-              <View style={styles.itemInfo}>
-                <Text style={[styles.itemName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-                  {item.menu_items?.name ?? 'Item'}
-                </Text>
-                <Text style={styles.itemQuantity}>Quantity: {item.quantity}</Text>
+            <View style={styles.infoRow}>
+              <Feather name="clock" size={15} color={colors.sage} />
+              <Text style={styles.infoText}>
+                {order.pickup_time
+                  ? `Pickup at ${new Date(order.pickup_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                  : 'Pickup in 15-20 min'}
+              </Text>
+            </View>
+            {order.notes ? (
+              <View style={styles.infoRow}>
+                <Feather name="file-text" size={15} color={colors.sage} />
+                <Text style={styles.infoText}>{order.notes}</Text>
               </View>
-              <Text style={[styles.itemPrice, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-                ${(Number(item.unit_price) * Number(item.quantity)).toFixed(2)}
-              </Text>
+            ) : null}
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Order Items</Text>
+            {order.order_items.map((item, index) => (
+              <View key={index} style={styles.orderItem}>
+                <View style={styles.itemInfo}>
+                  <Text style={styles.itemName}>{item.menu_items?.name ?? 'Item'}</Text>
+                  <Text style={styles.itemQuantity}>Quantity: {item.quantity}</Text>
+                </View>
+                <Text style={styles.itemPrice}>
+                  ${(Number(item.unit_price) * Number(item.quantity)).toFixed(2)}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Subtotal</Text>
+              <Text style={styles.summaryValue}>${Number(order.subtotal).toFixed(2)}</Text>
             </View>
-          ))}
-        </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Tip</Text>
+              <Text style={styles.summaryValue}>${Number(order.tip).toFixed(2)}</Text>
+            </View>
+            <View style={styles.totalSection}>
+              <Text style={styles.totalText}>Total Amount</Text>
+              <Text style={styles.totalText}>${Number(order.total).toFixed(2)}</Text>
+            </View>
+          </View>
 
-        <View style={styles.section}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={[styles.summaryValue, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-              ${Number(order.subtotal).toFixed(2)}
-            </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Tip</Text>
-            <Text style={[styles.summaryValue, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-              ${Number(order.tip).toFixed(2)}
-            </Text>
-          </View>
-          <View style={styles.totalSection}>
-            <Text style={[styles.totalLabel, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-              Total Amount
-            </Text>
-            <Text style={[styles.totalAmount, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-              ${Number(order.total).toFixed(2)}
-            </Text>
-          </View>
+          {order.status === 'ready' && (
+            <TouchableOpacity
+              style={[primaryButton, styles.pickupButton]}
+              onPress={() => {
+                // Handle pickup confirmation
+                alert('Please show this screen to the cafe staff when picking up your order.');
+              }}
+            >
+              <Feather name="check-circle" size={18} color={colors.white} style={styles.pickupButtonIcon} />
+              <Text style={primaryButtonText}>Show to Staff for Pickup</Text>
+            </TouchableOpacity>
+          )}
         </View>
-
-        {order.status === 'ready' && (
-          <TouchableOpacity
-            style={styles.pickupButton}
-            onPress={() => {
-              // Handle pickup confirmation
-              alert('Please show this screen to the cafe staff when picking up your order.');
-            }}
-          >
-            <FontAwesome name="check-circle" size={20} color="#fff" style={styles.pickupButtonIcon} />
-            <Text style={styles.pickupButtonText}>Show to Staff for Pickup</Text>
-          </TouchableOpacity>
-        )}
       </ScrollView>
-    </View>
+    </GradientScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 32,
   },
   loadingState: {
     flex: 1,
@@ -241,8 +226,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
+    fontFamily: fonts.light,
+    fontSize: 14,
+    letterSpacing: 0.4,
+    color: colors.inkSoft,
     marginTop: 16,
-    fontSize: 16,
   },
   cafeImage: {
     width: '100%',
@@ -250,115 +238,123 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   cafeImagePlaceholder: {
-    backgroundColor: '#eee',
+    backgroundColor: colors.glassSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  section: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+  body: {
+    paddingHorizontal: 22,
+    paddingTop: 18,
+  },
+  card: {
+    ...glassCard,
+    borderRadius: 12,
+    padding: 17,
+    marginBottom: 13,
   },
   cafeName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    ...display(22),
+    marginBottom: 10,
   },
   statusBadge: {
     alignSelf: 'flex-start',
+    borderWidth: 1,
+    backgroundColor: colors.glassSoft,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
-    marginTop: 4,
+    borderRadius: radius.chip,
   },
   statusText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    paddingVertical: 5,
   },
   infoText: {
-    fontSize: 16,
-    marginLeft: 8,
+    fontFamily: fonts.light,
+    fontSize: 13.5,
+    letterSpacing: 0.3,
+    color: colors.ink,
+    marginLeft: 10,
+    flex: 1,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  itemsSection: {
-    backgroundColor: 'transparent',
+    fontFamily: fonts.display,
+    fontSize: 14,
+    letterSpacing: 2.8,
+    textTransform: 'uppercase',
+    color: colors.sage,
+    marginBottom: 6,
   },
   orderItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: colors.hairlineFaint,
   },
   itemInfo: {
     flex: 1,
+    marginRight: 12,
   },
   itemName: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
+    fontFamily: fonts.medium,
+    fontSize: 14.5,
+    letterSpacing: 0.5,
+    color: colors.ink,
   },
   itemQuantity: {
-    fontSize: 14,
-    color: '#666',
+    fontFamily: fonts.light,
+    fontSize: 12,
+    letterSpacing: 0.2,
+    color: colors.inkSoft,
+    marginTop: 3,
   },
   itemPrice: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.ink,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    paddingVertical: 5,
   },
   summaryLabel: {
-    fontSize: 16,
-    color: '#666',
+    fontFamily: fonts.light,
+    fontSize: 13.5,
+    letterSpacing: 0.5,
+    color: colors.inkSoft,
   },
   summaryValue: {
-    fontSize: 16,
+    fontFamily: fonts.regular,
+    fontSize: 13.5,
+    color: colors.inkSoft,
   },
   totalSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: colors.hairline,
     marginTop: 8,
+    paddingTop: 12,
   },
-  totalLabel: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  totalAmount: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  totalText: {
+    ...display(17),
+    letterSpacing: 1.4,
   },
   pickupButton: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4CAF50',
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
+    marginTop: 4,
   },
   pickupButtonIcon: {
     marginRight: 8,
-  },
-  pickupButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

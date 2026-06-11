@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { useColorScheme } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 
 import { supabase } from '../../lib/supabase';
 import { getDistanceInMiles } from '../../lib/distance';
+import { colors, fonts, display, overline } from '../../lib/theme';
 import CafeCard from '../../components/CafeCard';
+import GradientScreen from '../../components/GradientScreen';
 
 interface Cafe {
   id: string;
@@ -23,10 +25,10 @@ type FilterId = 'all' | 'open' | 'top';
 
 const TOP_RATED_MIN = 4.5;
 
-const FILTERS: { id: FilterId; label: string; icon: string }[] = [
-  { id: 'all', label: 'All', icon: 'th-large' },
-  { id: 'open', label: 'Open Now', icon: 'clock-o' },
-  { id: 'top', label: 'Top Rated', icon: 'star' },
+const FILTERS: { id: FilterId; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'open', label: 'Open now' },
+  { id: 'top', label: 'Top rated' },
 ];
 
 const matchesFilter = (cafe: Cafe, filter: FilterId) => {
@@ -37,7 +39,7 @@ const matchesFilter = (cafe: Cafe, filter: FilterId) => {
 
 export default function SearchScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<FilterId>('all');
   const [cafes, setCafes] = useState<Cafe[]>([]);
@@ -123,45 +125,22 @@ export default function SearchScreen() {
     return matchesSearch && matchesFilter(cafe, selectedFilter);
   });
 
-  const renderFilterTag = ({ item }: { item: typeof FILTERS[0] }) => (
-    <TouchableOpacity
-      style={[
-        styles.filterTag,
-        {
-          backgroundColor: colorScheme === 'dark' ? '#2c2c2e' : '#f2f2f7',
-          borderWidth: 1,
-          borderColor: colorScheme === 'dark' ? '#3c3c3e' : '#e5e5e5'
-        },
-        selectedFilter === item.id && {
-          backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#fff',
-          borderColor: '#007AFF'
-        }
-      ]}
-      onPress={() => setSelectedFilter(item.id)}
-    >
-      <FontAwesome
-        name={item.icon as any}
-        size={16}
-        color={selectedFilter === item.id
-          ? '#007AFF'
-          : colorScheme === 'dark' ? '#fff' : '#000'
-        }
-        style={styles.filterIcon}
-      />
-      <Text style={[
-        styles.filterTagText,
-        {
-          color: selectedFilter === item.id
-            ? '#007AFF'
-            : colorScheme === 'dark' ? '#fff' : '#000'
-        }
-      ]}>
-        {item.label} ({selectedFilter === item.id
-          ? filteredCafes.length
-          : cafes.filter(cafe => matchesFilter(cafe, item.id)).length})
-      </Text>
-    </TouchableOpacity>
-  );
+  const renderFilterTag = ({ item }: { item: typeof FILTERS[0] }) => {
+    const selected = selectedFilter === item.id;
+    const count = selected
+      ? filteredCafes.length
+      : cafes.filter(cafe => matchesFilter(cafe, item.id)).length;
+    return (
+      <TouchableOpacity
+        style={[styles.chip, selected && styles.chipOn]}
+        onPress={() => setSelectedFilter(item.id)}
+      >
+        <Text style={[styles.chipText, selected && styles.chipTextOn]}>
+          {item.label} ({count})
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   const renderCafeItem = ({ item }: { item: Cafe }) => (
     <CafeCard
@@ -176,151 +155,154 @@ export default function SearchScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }]}>
-      <View style={[
-        styles.searchContainer,
-        { backgroundColor: colorScheme === 'dark' ? '#2c2c2e' : '#f5f5f5' }
-      ]}>
-        <FontAwesome
-          name="search"
-          size={18}
-          color={colorScheme === 'dark' ? '#fff' : '#666'}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={[styles.searchInput, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}
-          placeholder="Search cafes or addresses..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor={colorScheme === 'dark' ? '#999' : '#666'}
-          autoCorrect={false}
-          autoCapitalize="none"
-        />
-        {searchQuery !== '' && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={() => setSearchQuery('')}
-          >
-            <FontAwesome
-              name="times-circle"
-              size={18}
-              color={colorScheme === 'dark' ? '#fff' : '#666'}
-            />
-          </TouchableOpacity>
+    <GradientScreen>
+      <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+        <View style={styles.head}>
+          <Text style={styles.kicker}>BREAK</Text>
+          <Text style={styles.title}>Search</Text>
+        </View>
+
+        <View style={styles.searchField}>
+          <Feather name="search" size={16} color={colors.inkMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search cafes or addresses…"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor={colors.inkMuted}
+            autoCorrect={false}
+            autoCapitalize="none"
+          />
+          {searchQuery !== '' && (
+            <TouchableOpacity style={styles.clearButton} onPress={() => setSearchQuery('')}>
+              <Feather name="x-circle" size={16} color={colors.inkMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.filterRow}>
+          <FlatList
+            data={FILTERS}
+            renderItem={renderFilterTag}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          />
+        </View>
+
+        {isLoading ? (
+          <View style={styles.emptyState}>
+            <ActivityIndicator size="large" color={colors.sage} />
+            <Text style={[styles.emptySub, styles.loadingText]}>Loading cafes…</Text>
+          </View>
+        ) : filteredCafes.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Feather name="search" size={44} color={colors.inkMuted} />
+            <Text style={styles.emptyTitle}>No cafes found</Text>
+            <Text style={styles.emptySub}>Try adjusting your search or filters.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredCafes}
+            renderItem={renderCafeItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+          />
         )}
       </View>
-
-      <View style={styles.filterContainer}>
-        <FlatList
-          data={FILTERS}
-          renderItem={renderFilterTag}
-          keyExtractor={(item) => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filterList}
-          contentContainerStyle={styles.filterListContent}
-        />
-      </View>
-
-      {isLoading ? (
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.emptyStateSubtext}>Loading cafes...</Text>
-        </View>
-      ) : filteredCafes.length === 0 ? (
-        <View style={styles.emptyState}>
-          <FontAwesome name="search" size={48} color="#666" />
-          <Text style={[styles.emptyStateText, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            No cafes found
-          </Text>
-          <Text style={styles.emptyStateSubtext}>
-            Try adjusting your search or filters
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredCafes}
-          renderItem={renderCafeItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.cafeList}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
-    </View>
+    </GradientScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 22,
   },
-  searchContainer: {
+  head: {
+    marginTop: 8,
+    marginBottom: 18,
+  },
+  kicker: {
+    ...overline(11),
+    letterSpacing: 3,
+  },
+  title: {
+    ...display(28),
+    marginTop: 8,
+  },
+  searchField: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
-    backgroundColor: '#f5f5f5',
-    margin: 16,
+    backgroundColor: colors.glassSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.25)',
     borderRadius: 10,
-  },
-  searchIcon: {
-    marginRight: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontFamily: fonts.light,
+    fontSize: 14,
+    color: colors.ink,
+    marginLeft: 10,
     padding: 0,
   },
-  filterContainer: {
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  filterList: {
-    paddingVertical: 12,
-  },
-  filterListContent: {
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  filterTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 12,
-    minWidth: 100,
-    justifyContent: 'center',
-  },
-  filterIcon: {
-    marginRight: 8,
-    width: 16,
-    textAlign: 'center',
-  },
-  filterTagText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  cafeList: {
-    padding: 16,
-  },
   clearButton: {
-    padding: 8,
+    paddingLeft: 8,
+  },
+  filterRow: {
+    marginTop: 14,
+    marginBottom: 12,
+  },
+  chip: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.32)',
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    marginRight: 8,
+  },
+  chipOn: {
+    backgroundColor: colors.sage,
+    borderColor: colors.sage,
+  },
+  chipText: {
+    fontFamily: fonts.medium,
+    fontSize: 11.5,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+    color: colors.inkSoft,
+  },
+  chipTextOn: {
+    color: colors.white,
+    fontFamily: fonts.semibold,
+  },
+  listContainer: {
+    paddingBottom: 24,
   },
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
+    paddingBottom: 80,
   },
-  emptyStateText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  emptyTitle: {
+    ...display(20),
     marginTop: 16,
+    marginBottom: 8,
   },
-  emptyStateSubtext: {
+  emptySub: {
+    fontFamily: fonts.light,
     fontSize: 14,
-    color: '#666',
-    marginTop: 8,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
+    textAlign: 'center',
+  },
+  loadingText: {
+    marginTop: 14,
   },
 });

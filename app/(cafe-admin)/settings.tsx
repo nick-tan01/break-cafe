@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TextInput, 
-  TouchableOpacity, 
-  Switch, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  Switch,
   Image,
   Alert
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { useColorScheme } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+
+import { colors, fonts, glassCard, overline } from '../../lib/theme';
+import GradientScreen from '../../components/GradientScreen';
 
 // Mock cafe data
 const INITIAL_CAFE_DATA = {
@@ -65,17 +67,11 @@ interface CafeData {
 }
 
 export default function SettingsScreen() {
-  const colorScheme = useColorScheme();
   const router = useRouter();
   const [cafeData, setCafeData] = useState<CafeData>(INITIAL_CAFE_DATA);
   const [activeSection, setActiveSection] = useState<'basic' | 'hours' | 'notifications'>('basic');
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<CafeData>(INITIAL_CAFE_DATA);
-
-  const isDark = colorScheme === 'dark';
-  const textColor = isDark ? '#fff' : '#000';
-  const bgColor = isDark ? '#000' : '#fff';
-  const cardBgColor = isDark ? '#1c1c1e' : '#f2f2f7';
 
   const handleSave = () => {
     // Email validation
@@ -143,46 +139,33 @@ export default function SettingsScreen() {
 
   const renderBasicInfoSection = () => (
     <View style={styles.sectionContent}>
+      <Text style={styles.cardHeading}>Basic Info</Text>
       <View style={styles.imageContainer}>
-        <Image 
-          source={{ uri: editedData.image }} 
-          style={styles.cafeImage} 
+        <Image
+          source={{ uri: editedData.image }}
+          style={styles.cafeImage}
         />
         {isEditing && (
           <TouchableOpacity style={styles.editImageButton} onPress={handleImagePick}>
-            <FontAwesome name="camera" size={20} color="#fff" />
+            <FontAwesome name="camera" size={17} color={colors.white} />
           </TouchableOpacity>
         )}
       </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Cafe Name</Text>
+      <View style={[styles.fieldCard, isEditing && styles.fieldCardEditing]}>
+        <Text style={styles.fieldLabel}>Cafe Name</Text>
         <TextInput
-          style={[
-            styles.input,
-            { 
-              backgroundColor: isEditing ? (isDark ? '#333' : '#f5f5f5') : 'transparent',
-              color: textColor,
-              borderColor: isEditing ? (isDark ? '#444' : '#ddd') : 'transparent'
-            }
-          ]}
+          style={styles.fieldInput}
           value={editedData.name}
           onChangeText={(text) => setEditedData({...editedData, name: text})}
           editable={isEditing}
         />
       </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Address</Text>
+      <View style={[styles.fieldCard, isEditing && styles.fieldCardEditing]}>
+        <Text style={styles.fieldLabel}>Address</Text>
         <TextInput
-          style={[
-            styles.input,
-            { 
-              backgroundColor: isEditing ? (isDark ? '#333' : '#f5f5f5') : 'transparent',
-              color: textColor,
-              borderColor: isEditing ? (isDark ? '#444' : '#ddd') : 'transparent'
-            }
-          ]}
+          style={styles.fieldInput}
           value={editedData.address}
           onChangeText={(text) => setEditedData({...editedData, address: text})}
           editable={isEditing}
@@ -190,17 +173,10 @@ export default function SettingsScreen() {
         />
       </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Phone</Text>
+      <View style={[styles.fieldCard, isEditing && styles.fieldCardEditing]}>
+        <Text style={styles.fieldLabel}>Phone</Text>
         <TextInput
-          style={[
-            styles.input,
-            { 
-              backgroundColor: isEditing ? (isDark ? '#333' : '#f5f5f5') : 'transparent',
-              color: textColor,
-              borderColor: isEditing ? (isDark ? '#444' : '#ddd') : 'transparent'
-            }
-          ]}
+          style={styles.fieldInput}
           value={editedData.phone}
           onChangeText={(text) => setEditedData({...editedData, phone: text})}
           editable={isEditing}
@@ -208,17 +184,10 @@ export default function SettingsScreen() {
         />
       </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Email</Text>
+      <View style={[styles.fieldCard, isEditing && styles.fieldCardEditing]}>
+        <Text style={styles.fieldLabel}>Email</Text>
         <TextInput
-          style={[
-            styles.input,
-            { 
-              backgroundColor: isEditing ? (isDark ? '#333' : '#f5f5f5') : 'transparent',
-              color: textColor,
-              borderColor: isEditing ? (isDark ? '#444' : '#ddd') : 'transparent'
-            }
-          ]}
+          style={styles.fieldInput}
           value={editedData.email}
           onChangeText={(text) => setEditedData({...editedData, email: text})}
           editable={isEditing}
@@ -227,17 +196,10 @@ export default function SettingsScreen() {
         />
       </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Description</Text>
+      <View style={[styles.fieldCard, isEditing && styles.fieldCardEditing]}>
+        <Text style={styles.fieldLabel}>Description</Text>
         <TextInput
-          style={[
-            styles.textArea,
-            { 
-              backgroundColor: isEditing ? (isDark ? '#333' : '#f5f5f5') : 'transparent',
-              color: textColor,
-              borderColor: isEditing ? (isDark ? '#444' : '#ddd') : 'transparent'
-            }
-          ]}
+          style={[styles.fieldInput, styles.fieldInputArea]}
           value={editedData.description}
           onChangeText={(text) => setEditedData({...editedData, description: text})}
           editable={isEditing}
@@ -251,53 +213,40 @@ export default function SettingsScreen() {
 
   const renderHoursSection = () => (
     <View style={styles.sectionContent}>
-      {(Object.keys(cafeData.openingHours) as DayOfWeek[]).map((day) => (
-        <View key={day} style={styles.hourRow}>
-          <Text style={[styles.dayLabel, { color: textColor }]}>
+      <Text style={styles.cardHeading}>Opening Hours</Text>
+      {(Object.keys(cafeData.openingHours) as DayOfWeek[]).map((day, index) => (
+        <View key={day} style={[styles.hourRow, index > 0 && styles.rowDivider]}>
+          <Text style={styles.dayLabel}>
             {day.charAt(0).toUpperCase() + day.slice(1)}
           </Text>
-          
+
           <View style={styles.hoursContainer}>
             <Switch
               value={cafeData.openingHours[day].isOpen}
               onValueChange={(value) => updateOpeningHours(day, 'isOpen', value)}
               disabled={!isEditing}
-              trackColor={{ false: '#767577', true: '#81b0ff' }}
-              thumbColor={cafeData.openingHours[day].isOpen ? '#007AFF' : '#f4f3f4'}
+              trackColor={{ true: colors.sage }}
+              thumbColor={colors.white}
             />
-            
+
             {cafeData.openingHours[day].isOpen && (
               <View style={styles.timeInputContainer}>
                 <TextInput
-                  style={[
-                    styles.timeInput,
-                    { 
-                      backgroundColor: isEditing ? (isDark ? '#333' : '#f5f5f5') : 'transparent',
-                      color: textColor,
-                      borderColor: isEditing ? (isDark ? '#444' : '#ddd') : 'transparent'
-                    }
-                  ]}
+                  style={[styles.timeInput, isEditing && styles.timeInputEditing]}
                   value={cafeData.openingHours[day].open}
                   onChangeText={(text) => updateOpeningHours(day, 'open', text)}
                   editable={isEditing}
                 />
-                <Text style={{ color: textColor, marginHorizontal: 8 }}>to</Text>
+                <Text style={styles.timeTo}>to</Text>
                 <TextInput
-                  style={[
-                    styles.timeInput,
-                    { 
-                      backgroundColor: isEditing ? (isDark ? '#333' : '#f5f5f5') : 'transparent',
-                      color: textColor,
-                      borderColor: isEditing ? (isDark ? '#444' : '#ddd') : 'transparent'
-                    }
-                  ]}
+                  style={[styles.timeInput, isEditing && styles.timeInputEditing]}
                   value={cafeData.openingHours[day].close}
                   onChangeText={(text) => updateOpeningHours(day, 'close', text)}
                   editable={isEditing}
                 />
               </View>
             )}
-            
+
             {!cafeData.openingHours[day].isOpen && (
               <Text style={styles.closedText}>Closed</Text>
             )}
@@ -309,9 +258,10 @@ export default function SettingsScreen() {
 
   const renderNotificationsSection = () => (
     <View style={styles.sectionContent}>
+      <Text style={styles.cardHeading}>Notifications</Text>
       <View style={styles.notificationRow}>
-        <View>
-          <Text style={[styles.notificationTitle, { color: textColor }]}>New Orders</Text>
+        <View style={styles.notificationInfo}>
+          <Text style={styles.notificationTitle}>New Orders</Text>
           <Text style={styles.notificationDescription}>
             Receive notifications when a new order is placed
           </Text>
@@ -319,14 +269,14 @@ export default function SettingsScreen() {
         <Switch
           value={cafeData.notifications.newOrders}
           onValueChange={(value) => updateNotification('newOrders', value)}
-          trackColor={{ false: '#767577', true: '#81b0ff' }}
-          thumbColor={cafeData.notifications.newOrders ? '#007AFF' : '#f4f3f4'}
+          trackColor={{ true: colors.sage }}
+          thumbColor={colors.white}
         />
       </View>
-      
-      <View style={styles.notificationRow}>
-        <View>
-          <Text style={[styles.notificationTitle, { color: textColor }]}>Order Status Updates</Text>
+
+      <View style={[styles.notificationRow, styles.rowDivider]}>
+        <View style={styles.notificationInfo}>
+          <Text style={styles.notificationTitle}>Order Status Updates</Text>
           <Text style={styles.notificationDescription}>
             Receive notifications when an order status changes
           </Text>
@@ -334,14 +284,14 @@ export default function SettingsScreen() {
         <Switch
           value={cafeData.notifications.orderStatus}
           onValueChange={(value) => updateNotification('orderStatus', value)}
-          trackColor={{ false: '#767577', true: '#81b0ff' }}
-          thumbColor={cafeData.notifications.orderStatus ? '#007AFF' : '#f4f3f4'}
+          trackColor={{ true: colors.sage }}
+          thumbColor={colors.white}
         />
       </View>
-      
-      <View style={styles.notificationRow}>
-        <View>
-          <Text style={[styles.notificationTitle, { color: textColor }]}>New Reviews</Text>
+
+      <View style={[styles.notificationRow, styles.rowDivider]}>
+        <View style={styles.notificationInfo}>
+          <Text style={styles.notificationTitle}>New Reviews</Text>
           <Text style={styles.notificationDescription}>
             Receive notifications when a customer leaves a review
           </Text>
@@ -349,14 +299,14 @@ export default function SettingsScreen() {
         <Switch
           value={cafeData.notifications.reviews}
           onValueChange={(value) => updateNotification('reviews', value)}
-          trackColor={{ false: '#767577', true: '#81b0ff' }}
-          thumbColor={cafeData.notifications.reviews ? '#007AFF' : '#f4f3f4'}
+          trackColor={{ true: colors.sage }}
+          thumbColor={colors.white}
         />
       </View>
-      
-      <View style={styles.notificationRow}>
-        <View>
-          <Text style={[styles.notificationTitle, { color: textColor }]}>Promotions</Text>
+
+      <View style={[styles.notificationRow, styles.rowDivider]}>
+        <View style={styles.notificationInfo}>
+          <Text style={styles.notificationTitle}>Promotions</Text>
           <Text style={styles.notificationDescription}>
             Receive notifications about new platform features and promotions
           </Text>
@@ -364,25 +314,17 @@ export default function SettingsScreen() {
         <Switch
           value={cafeData.notifications.promotions}
           onValueChange={(value) => updateNotification('promotions', value)}
-          trackColor={{ false: '#767577', true: '#81b0ff' }}
-          thumbColor={cafeData.notifications.promotions ? '#007AFF' : '#f4f3f4'}
+          trackColor={{ true: colors.sage }}
+          thumbColor={colors.white}
         />
       </View>
     </View>
   );
 
   return (
-    <>
+    <GradientScreen>
       <Stack.Screen
         options={{
-          headerTitle: "Settings",
-          headerStyle: {
-            backgroundColor: bgColor,
-          },
-          headerTintColor: textColor,
-          headerTitleStyle: {
-            fontWeight: '600',
-          },
           headerRight: () => (
             <TouchableOpacity
               style={styles.headerButton}
@@ -395,80 +337,57 @@ export default function SettingsScreen() {
           ),
         }}
       />
-      <View style={[styles.container, { backgroundColor: bgColor }]}>
-        <View style={styles.tabContainer}>
+      <View style={styles.container}>
+        <View style={styles.tabRow}>
           <TouchableOpacity
-            style={[
-              styles.tab,
-              activeSection === 'basic' && styles.activeTab,
-              { borderColor: activeSection === 'basic' ? '#007AFF' : 'transparent' }
-            ]}
+            style={[styles.tabChip, activeSection === 'basic' && styles.tabChipOn]}
             onPress={() => setActiveSection('basic')}
           >
-            <Text
-              style={[
-                styles.tabText,
-                activeSection === 'basic' && { color: '#007AFF' }
-              ]}
-            >
+            <Text style={[styles.tabChipText, activeSection === 'basic' && styles.tabChipTextOn]}>
               Basic Info
             </Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
-            style={[
-              styles.tab,
-              activeSection === 'hours' && styles.activeTab,
-              { borderColor: activeSection === 'hours' ? '#007AFF' : 'transparent' }
-            ]}
+            style={[styles.tabChip, activeSection === 'hours' && styles.tabChipOn]}
             onPress={() => setActiveSection('hours')}
           >
-            <Text
-              style={[
-                styles.tabText,
-                activeSection === 'hours' && { color: '#007AFF' }
-              ]}
-            >
-              Opening Hours
+            <Text style={[styles.tabChipText, activeSection === 'hours' && styles.tabChipTextOn]}>
+              Hours
             </Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
-            style={[
-              styles.tab,
-              activeSection === 'notifications' && styles.activeTab,
-              { borderColor: activeSection === 'notifications' ? '#007AFF' : 'transparent' }
-            ]}
+            style={[styles.tabChip, activeSection === 'notifications' && styles.tabChipOn]}
             onPress={() => setActiveSection('notifications')}
           >
-            <Text
-              style={[
-                styles.tabText,
-                activeSection === 'notifications' && { color: '#007AFF' }
-              ]}
-            >
+            <Text style={[styles.tabChipText, activeSection === 'notifications' && styles.tabChipTextOn]}>
               Notifications
             </Text>
           </TouchableOpacity>
         </View>
-        
-        <ScrollView style={styles.content}>
-          <View style={[styles.card, { backgroundColor: cardBgColor }]}>
+
+        <ScrollView
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <View style={styles.card}>
             {activeSection === 'basic' && renderBasicInfoSection()}
             {activeSection === 'hours' && renderHoursSection()}
             {activeSection === 'notifications' && renderNotificationsSection()}
           </View>
-          
+
           <TouchableOpacity
-            style={[styles.signOutButton, { backgroundColor: isDark ? '#333' : '#f5f5f5' }]}
+            style={styles.signOutButton}
             onPress={handleSignOut}
           >
-            <FontAwesome name="sign-out" size={18} color="#FF3B30" />
+            <Feather name="log-out" size={17} color={colors.inkSoft} />
             <Text style={styles.signOutButtonText}>Sign Out</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
-    </>
+    </GradientScreen>
   );
 }
 
@@ -476,85 +395,127 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  tabContainer: {
+  tabRow: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    marginBottom: 13,
   },
-  tab: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 2,
+  tabChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.32)',
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    marginHorizontal: 4,
   },
-  activeTab: {
-    borderBottomWidth: 2,
+  tabChipOn: {
+    backgroundColor: colors.sage,
+    borderColor: colors.sage,
   },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
+  tabChipText: {
+    fontFamily: fonts.medium,
+    fontSize: 10.5,
+    letterSpacing: 0.9,
+    textTransform: 'uppercase',
+    color: colors.inkSoft,
+  },
+  tabChipTextOn: {
+    color: colors.white,
+    fontFamily: fonts.semibold,
   },
   content: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 18,
+  },
+  scrollContent: {
+    paddingBottom: 30,
   },
   card: {
+    ...glassCard,
     borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 20,
+    marginBottom: 13,
   },
   sectionContent: {
-    padding: 16,
+    padding: 17,
+  },
+  cardHeading: {
+    fontFamily: fonts.display,
+    fontSize: 14,
+    letterSpacing: 2.8,
+    textTransform: 'uppercase',
+    color: colors.sage,
+    marginBottom: 14,
   },
   imageContainer: {
     position: 'relative',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   cafeImage: {
     width: '100%',
-    height: 180,
-    borderRadius: 8,
+    height: 170,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   editImageButton: {
     position: 'absolute',
     bottom: 10,
     right: 10,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    padding: 8,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 999,
+    backgroundColor: colors.sage,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  input: {
-    height: 40,
+  fieldCard: {
+    backgroundColor: colors.glassSoft,
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 16,
+    borderColor: colors.glassBorder,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 11,
   },
-  textArea: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 16,
-    minHeight: 100,
+  fieldCardEditing: {
+    borderColor: colors.sageBorder,
+  },
+  fieldLabel: {
+    ...overline(9.5),
+    letterSpacing: 1.6,
+  },
+  fieldInput: {
+    fontFamily: fonts.regular,
+    fontSize: 14.5,
+    letterSpacing: 0.3,
+    color: colors.ink,
+    padding: 0,
+    marginTop: 5,
+  },
+  fieldInputArea: {
+    minHeight: 84,
+    lineHeight: 20,
+    textAlignVertical: 'top',
   },
   hourRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingVertical: 10,
+  },
+  rowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: colors.hairlineFaint,
   },
   dayLabel: {
-    width: 100,
-    fontSize: 16,
+    width: 86,
+    fontFamily: fonts.medium,
+    fontSize: 13.5,
+    letterSpacing: 0.4,
+    color: colors.ink,
   },
   hoursContainer: {
     flex: 1,
@@ -564,59 +525,88 @@ const styles = StyleSheet.create({
   timeInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 16,
+    marginLeft: 12,
   },
   timeInput: {
-    width: 70,
-    height: 40,
+    width: 60,
+    paddingVertical: 7,
+    paddingHorizontal: 6,
     borderWidth: 1,
+    borderColor: colors.glassBorder,
+    backgroundColor: colors.glassSoft,
     borderRadius: 8,
-    padding: 8,
     textAlign: 'center',
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.ink,
+  },
+  timeInputEditing: {
+    borderColor: colors.sageBorder,
+  },
+  timeTo: {
+    fontFamily: fonts.light,
+    fontSize: 12,
+    color: colors.inkSoft,
+    marginHorizontal: 7,
   },
   closedText: {
-    marginLeft: 16,
-    fontSize: 16,
-    color: '#666',
+    marginLeft: 12,
+    fontFamily: fonts.light,
+    fontSize: 13,
+    letterSpacing: 0.3,
+    color: colors.inkMuted,
   },
   notificationRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    paddingVertical: 13,
+  },
+  notificationInfo: {
+    flex: 1,
+    marginRight: 12,
   },
   notificationTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
+    fontFamily: fonts.regular,
+    fontSize: 14.5,
+    letterSpacing: 0.4,
+    color: colors.ink,
+    marginBottom: 3,
   },
   notificationDescription: {
-    fontSize: 14,
-    color: '#666',
-    maxWidth: '80%',
+    fontFamily: fonts.light,
+    fontSize: 12,
+    letterSpacing: 0.2,
+    color: colors.inkSoft,
+    lineHeight: 17,
   },
   signOutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(35,43,58,0.2)',
+    backgroundColor: colors.glassSoft,
     marginBottom: 30,
   },
   signOutButtonText: {
-    color: '#FF3B30',
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 8,
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    letterSpacing: 1.8,
+    textTransform: 'uppercase',
+    color: colors.inkSoft,
+    marginLeft: 9,
   },
   headerButton: {
     paddingHorizontal: 16,
   },
   headerButtonText: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '500',
+    fontFamily: fonts.semibold,
+    fontSize: 12.5,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    color: colors.sage,
   },
-}); 
+});

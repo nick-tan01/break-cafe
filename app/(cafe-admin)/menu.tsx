@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
   TouchableOpacity,
   TextInput,
   Switch,
@@ -13,10 +13,10 @@ import {
   Platform,
   FlatList
 } from 'react-native';
-import { Stack } from 'expo-router';
-import { useColorScheme } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
+
+import { colors, fonts, glassCard, display, overline, primaryButton, primaryButtonText } from '../../lib/theme';
+import GradientScreen from '../../components/GradientScreen';
 
 interface Customization {
   id: string;
@@ -45,12 +45,15 @@ interface FormData {
 }
 
 const FILTER_CATEGORIES = [
-  { id: 'all', label: 'All Items', icon: 'th-large' },
-  { id: 'Drinks', label: 'Drinks', icon: 'coffee' },
-  { id: 'Food', label: 'Food', icon: 'cutlery' },
-  { id: 'Desserts', label: 'Desserts', icon: 'birthday-cake' },
-  { id: 'Snacks', label: 'Snacks', icon: 'cutlery' },
+  { id: 'all', label: 'All Items' },
+  { id: 'Drinks', label: 'Drinks' },
+  { id: 'Food', label: 'Food' },
+  { id: 'Desserts', label: 'Desserts' },
+  { id: 'Snacks', label: 'Snacks' },
 ];
+
+// Switch "off" track — neutral ink wash per the Daybreak admin mockup
+const SWITCH_TRACK_OFF = 'rgba(35,43,58,0.16)';
 
 const MOCK_MENU_ITEMS: MenuItem[] = [
   {
@@ -94,7 +97,6 @@ const MOCK_MENU_ITEMS: MenuItem[] = [
 ];
 
 export default function MenuManagement() {
-  const colorScheme = useColorScheme();
   const [menuItems, setMenuItems] = useState<MenuItem[]>(MOCK_MENU_ITEMS);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -108,11 +110,6 @@ export default function MenuManagement() {
     isAvailable: true,
     customizations: []
   });
-
-  const isDark = colorScheme === 'dark';
-  const textColor = isDark ? '#fff' : '#000';
-  const bgColor = isDark ? '#000' : '#fff';
-  const cardBgColor = isDark ? '#1c1c1e' : '#f2f2f7';
 
   const filteredItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -259,66 +256,46 @@ export default function MenuManagement() {
     const count = item.id === 'all'
       ? menuItems.length
       : menuItems.filter(menuItem => menuItem.category === item.id).length;
+    const isOn = selectedCategory === item.id;
 
     return (
       <TouchableOpacity
-        style={[
-          styles.filterTag,
-          { 
-            backgroundColor: isDark ? '#2c2c2e' : '#f2f2f7',
-            borderWidth: 1,
-            borderColor: isDark ? '#3c3c3e' : '#e5e5e5'
-          },
-          selectedCategory === item.id && {
-            backgroundColor: isDark ? '#1c1c1e' : '#fff',
-            borderColor: '#007AFF'
-          }
-        ]}
+        style={[styles.filterChip, isOn && styles.filterChipOn]}
         onPress={() => setSelectedCategory(item.id)}
       >
-        <FontAwesome 
-          name={item.icon as any} 
-          size={16} 
-          color={selectedCategory === item.id 
-            ? '#007AFF'
-            : isDark ? '#fff' : '#000'
-          } 
-          style={styles.filterIcon} 
-        />
-        <Text style={[
-          styles.filterTagText,
-          { 
-            color: selectedCategory === item.id 
-              ? '#007AFF'
-              : isDark ? '#fff' : '#000'
-          }
-        ]}>
-          {item.label} ({count})
+        <Text style={[styles.filterChipText, isOn && styles.filterChipTextOn]}>
+          {item.label}{' '}
+          <Text style={[styles.filterChipCount, isOn && styles.filterChipCountOn]}>
+            {count}
+          </Text>
         </Text>
       </TouchableOpacity>
     );
   };
 
   const renderMenuItem = ({ item }: { item: MenuItem }) => (
-    <View 
-      style={[
-        styles.menuCard,
-        { 
-          backgroundColor: isDark ? '#1c1c1e' : '#fff',
-          shadowColor: isDark ? '#000' : '#000',
-        }
-      ]}
-    >
+    <View style={[styles.menuCard, !item.isAvailable && styles.menuCardOff]}>
       <View style={styles.menuCardHeader}>
         <View style={styles.menuCardTitleSection}>
-          <Text style={[styles.menuItemName, { color: isDark ? '#fff' : '#000' }]}>
-            {item.name}
-          </Text>
-          <Text style={[styles.menuItemCategory, { color: isDark ? '#999' : '#666' }]}>
-            {item.category}
-          </Text>
+          <Text style={styles.menuItemName}>{item.name}</Text>
+          <View style={styles.menuMetaRow}>
+            <Text style={styles.menuItemCategory}>{item.category}</Text>
+            <Text style={styles.menuItemPrice}>${item.price.toFixed(2)}</Text>
+          </View>
         </View>
         <View style={styles.menuCardActions}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => handleEditItem(item)}
+          >
+            <Feather name="edit-3" size={14} color={colors.sage} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => handleDeleteItem(item.id)}
+          >
+            <Feather name="trash-2" size={14} color={colors.inkSoft} />
+          </TouchableOpacity>
           <Switch
             value={item.isAvailable}
             onValueChange={(value) => {
@@ -330,449 +307,346 @@ export default function MenuManagement() {
                 )
               );
             }}
+            trackColor={{ false: SWITCH_TRACK_OFF, true: colors.sage }}
+            thumbColor={colors.white}
+            ios_backgroundColor={SWITCH_TRACK_OFF}
           />
-          <TouchableOpacity
-            style={[styles.editButton, { backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8' }]}
-            onPress={() => handleEditItem(item)}
-          >
-            <FontAwesome name="edit" size={16} color="#007AFF" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.deleteButton, { backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8' }]}
-            onPress={() => handleDeleteItem(item.id)}
-          >
-            <FontAwesome name="trash" size={16} color="#FF3B30" />
-          </TouchableOpacity>
         </View>
       </View>
 
-      <Text style={[styles.menuItemPrice, { color: isDark ? '#fff' : '#000' }]}>
-        ${item.price.toFixed(2)}
-      </Text>
-      <Text style={[styles.menuItemDescription, { color: isDark ? '#999' : '#666' }]}>
-        {item.description}
-      </Text>
+      <Text style={styles.menuItemDescription}>{item.description}</Text>
 
       {item.customizations.length > 0 && (
-        <View style={styles.customizationsSection}>
-          <Text style={[styles.customizationsTitle, { color: isDark ? '#fff' : '#000' }]}>
-            Customizations
-          </Text>
-          {item.customizations.map((custom, index) => (
-            <View key={custom.id} style={styles.customizationItem}>
-              <Text style={[styles.customizationName, { color: isDark ? '#fff' : '#000' }]}>
-                {custom.name}
+        <View style={styles.customChips}>
+          {item.customizations.map((custom) => (
+            <View key={custom.id} style={styles.customChip}>
+              <Text style={styles.customChipText}>
+                <Text style={styles.customChipName}>{custom.name}</Text>
+                {' · '}{custom.options.join(' / ')}
               </Text>
-              <View style={styles.optionsContainer}>
-                {custom.options.map((option, optionIndex) => (
-                  <View 
-                    key={optionIndex}
-                    style={[
-                      styles.optionTag,
-                      { backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8' }
-                    ]}
-                  >
-                    <Text style={[styles.optionText, { color: isDark ? '#fff' : '#666' }]}>
-                      {option}
-                    </Text>
-                  </View>
-                ))}
-              </View>
             </View>
           ))}
+        </View>
+      )}
+
+      {!item.isAvailable && (
+        <View style={styles.hiddenTag}>
+          <Text style={styles.hiddenTagText}>Hidden from menu</Text>
         </View>
       )}
     </View>
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#000' : '#f8f8f8' }]}>
-      <Stack.Screen
-        options={{
-          headerTitle: "Menu Management",
-          headerStyle: {
-            backgroundColor: isDark ? '#000' : '#f8f8f8',
-          },
-          headerTintColor: isDark ? '#fff' : '#000',
-          headerTitleStyle: {
-            fontWeight: '600',
-          },
-          headerBackTitle: "",
-        }}
-      />
-
-      <View style={styles.searchContainer}>
-        <FontAwesome name="search" size={20} color={isDark ? '#999' : '#666'} style={styles.searchIcon} />
-        <TextInput
-          style={[
-            styles.searchInput,
-            { 
-              color: textColor,
-              backgroundColor: isDark ? '#1c1c1e' : '#fff',
-            }
-          ]}
-          placeholder="Search menu items..."
-          placeholderTextColor={isDark ? '#999' : '#666'}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
-
-      <FlatList
-        ListHeaderComponent={
-          <FlatList
-            data={FILTER_CATEGORIES}
-            renderItem={renderFilterCategory}
-            keyExtractor={item => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.filterList}
-            contentContainerStyle={styles.filterListContent}
+    <GradientScreen>
+      <View style={styles.container}>
+        <View style={styles.searchField}>
+          <Feather name="search" size={15} color={colors.inkMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search menu items..."
+            placeholderTextColor={colors.inkMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
-        }
-        data={filteredItems}
-        renderItem={renderMenuItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.menuList}
-      />
+        </View>
 
-      <TouchableOpacity
-        style={[
-          styles.addButton,
-          { shadowColor: isDark ? '#000' : '#000' }
-        ]}
-        onPress={handleAddItem}
-      >
-        <LinearGradient
-          colors={['#007AFF', '#0056B3']}
-          style={styles.addButtonGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <FlatList
+          ListHeaderComponent={
+            <FlatList
+              data={FILTER_CATEGORIES}
+              renderItem={renderFilterCategory}
+              keyExtractor={item => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filterList}
+              contentContainerStyle={styles.filterListContent}
+            />
+          }
+          data={filteredItems}
+          renderItem={renderMenuItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.menuList}
+          showsVerticalScrollIndicator={false}
+        />
+
+        <TouchableOpacity style={styles.addButton} onPress={handleAddItem}>
+          <Feather name="plus" size={22} color={colors.white} />
+        </TouchableOpacity>
+
+        {/* Add/Edit Item Modal */}
+        <Modal
+          visible={isModalVisible}
+          animationType="slide"
+          transparent={true}
         >
-          <FontAwesome name="plus" size={24} color="#fff" />
-        </LinearGradient>
-      </TouchableOpacity>
-
-      {/* Add/Edit Item Modal */}
-      <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        transparent={true}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalContainer}
-        >
-          <View style={[
-            styles.modalContent,
-            { 
-              backgroundColor: cardBgColor,
-              shadowColor: isDark ? '#000' : '#000',
-            }
-          ]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: textColor }]}>
-                {editingItem ? 'Edit Item' : 'Add New Item'}
-              </Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setIsModalVisible(false)}
-              >
-                <FontAwesome name="close" size={24} color={isDark ? '#fff' : '#666'} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalScroll}>
-              <View style={styles.formGroup}>
-                <Text style={[styles.formLabel, { color: textColor }]}>Name *</Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    { 
-                      color: textColor,
-                      backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8',
-                      borderColor: isDark ? '#3c3c3e' : '#e5e5e5'
-                    }
-                  ]}
-                  value={formData.name}
-                  onChangeText={(value) => setFormData({ ...formData, name: value })}
-                  placeholder="Item name"
-                  placeholderTextColor={isDark ? '#999' : '#666'}
-                />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalContainer}
+          >
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  {editingItem ? 'Edit Item' : 'Add New Item'}
+                </Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setIsModalVisible(false)}
+                >
+                  <Feather name="x" size={18} color={colors.ink} />
+                </TouchableOpacity>
               </View>
 
-              <View style={styles.formGroup}>
-                <Text style={[styles.formLabel, { color: textColor }]}>Price *</Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    { 
-                      color: textColor,
-                      backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8',
-                      borderColor: isDark ? '#3c3c3e' : '#e5e5e5'
-                    }
-                  ]}
-                  value={formData.price}
-                  onChangeText={(value) => setFormData({ ...formData, price: value })}
-                  placeholder="0.00"
-                  placeholderTextColor={isDark ? '#999' : '#666'}
-                  keyboardType="decimal-pad"
-                />
-              </View>
-
-              <View style={styles.formGroup}>
-                <Text style={[styles.formLabel, { color: textColor }]}>Category *</Text>
-                <View style={styles.categoryButtons}>
-                  {FILTER_CATEGORIES.filter(cat => cat.id !== 'all').map((category) => (
-                    <TouchableOpacity
-                      key={category.id}
-                      style={[
-                        styles.categoryButton,
-                        formData.category === category.id && styles.selectedCategoryButton,
-                        { 
-                          backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8',
-                          borderColor: formData.category === category.id ? '#007AFF' : 'transparent'
-                        }
-                      ]}
-                      onPress={() => setFormData({ ...formData, category: category.id })}
-                    >
-                      <FontAwesome 
-                        name={category.icon as any} 
-                        size={16} 
-                        color={formData.category === category.id ? '#007AFF' : isDark ? '#999' : '#666'} 
-                        style={styles.categoryIcon} 
-                      />
-                      <Text style={[
-                        styles.categoryButtonText,
-                        { 
-                          color: formData.category === category.id 
-                            ? '#007AFF' 
-                            : isDark ? '#999' : '#666'
-                        }
-                      ]}>
-                        {category.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              <View style={styles.formGroup}>
-                <Text style={[styles.formLabel, { color: textColor }]}>Description</Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    styles.textArea,
-                    { 
-                      color: textColor,
-                      backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8',
-                      borderColor: isDark ? '#3c3c3e' : '#e5e5e5'
-                    }
-                  ]}
-                  value={formData.description}
-                  onChangeText={(value) => setFormData({ ...formData, description: value })}
-                  placeholder="Item description"
-                  placeholderTextColor={isDark ? '#999' : '#666'}
-                  multiline
-                  numberOfLines={4}
-                />
-              </View>
-
-              <View style={styles.formGroup}>
-                <View style={styles.availabilityRow}>
-                  <Text style={[styles.formLabel, { color: textColor }]}>Available</Text>
-                  <Switch
-                    value={formData.isAvailable}
-                    onValueChange={(value) => setFormData({ ...formData, isAvailable: value })}
+              <ScrollView style={styles.modalScroll}>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Name *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={formData.name}
+                    onChangeText={(value) => setFormData({ ...formData, name: value })}
+                    placeholder="Item name"
+                    placeholderTextColor={colors.inkMuted}
                   />
                 </View>
-              </View>
 
-              <View style={styles.formGroup}>
-                <View style={styles.customizationHeader}>
-                  <Text style={[styles.formLabel, { color: textColor }]}>Customizations</Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.addCustomizationButton,
-                      { backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8' }
-                    ]}
-                    onPress={handleAddCustomization}
-                  >
-                    <FontAwesome name="plus" size={16} color="#007AFF" />
-                    <Text style={styles.addCustomizationText}>Add Customization</Text>
-                  </TouchableOpacity>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Price *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={formData.price}
+                    onChangeText={(value) => setFormData({ ...formData, price: value })}
+                    placeholder="0.00"
+                    placeholderTextColor={colors.inkMuted}
+                    keyboardType="decimal-pad"
+                  />
                 </View>
 
-                {formData.customizations.map((custom, index) => (
-                  <View key={custom.id} style={styles.customizationForm}>
-                    <TextInput
-                      style={[
-                        styles.formInput,
-                        { 
-                          color: textColor,
-                          backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8',
-                          borderColor: isDark ? '#3c3c3e' : '#e5e5e5'
-                        }
-                      ]}
-                      value={custom.name}
-                      onChangeText={(value) => handleUpdateCustomization(index, 'name', value)}
-                      placeholder="Customization name"
-                      placeholderTextColor={isDark ? '#999' : '#666'}
-                    />
-
-                    <View style={styles.optionsHeader}>
-                      <Text style={[styles.optionsLabel, { color: isDark ? '#999' : '#666' }]}>
-                        Options
-                      </Text>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Category *</Text>
+                  <View style={styles.categoryButtons}>
+                    {FILTER_CATEGORIES.filter(cat => cat.id !== 'all').map((category) => (
                       <TouchableOpacity
+                        key={category.id}
                         style={[
-                          styles.addOptionButton,
-                          { backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8' }
+                          styles.categoryButton,
+                          formData.category === category.id && styles.categoryButtonOn,
                         ]}
-                        onPress={() => handleAddOption(index)}
+                        onPress={() => setFormData({ ...formData, category: category.id })}
                       >
-                        <FontAwesome name="plus" size={14} color="#007AFF" />
-                        <Text style={styles.addOptionText}>Add Option</Text>
+                        <Text style={[
+                          styles.categoryButtonText,
+                          formData.category === category.id && styles.categoryButtonTextOn,
+                        ]}>
+                          {category.label}
+                        </Text>
                       </TouchableOpacity>
-                    </View>
-
-                    {custom.options.map((option, optionIndex) => (
-                      <TextInput
-                        key={optionIndex}
-                        style={[
-                          styles.formInput,
-                          styles.optionInput,
-                          { 
-                            color: textColor,
-                            backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8',
-                            borderColor: isDark ? '#3c3c3e' : '#e5e5e5'
-                          }
-                        ]}
-                        value={option}
-                        onChangeText={(value) => handleUpdateOption(index, optionIndex, value)}
-                        placeholder="Option name"
-                        placeholderTextColor={isDark ? '#999' : '#666'}
-                      />
                     ))}
                   </View>
-                ))}
-              </View>
-            </ScrollView>
+                </View>
 
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[
-                  styles.cancelButton,
-                  { backgroundColor: isDark ? '#2c2c2e' : '#f8f8f8' }
-                ]}
-                onPress={() => setIsModalVisible(false)}
-              >
-                <Text style={[
-                  styles.cancelButtonText,
-                  { color: isDark ? '#fff' : '#666' }
-                ]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.saveButton,
-                  { opacity: !formData.name || !formData.price || !formData.category ? 0.6 : 1 }
-                ]}
-                onPress={handleSaveItem}
-                disabled={!formData.name || !formData.price || !formData.category}
-              >
-                <Text style={styles.saveButtonText}>
-                  {editingItem ? 'Save Changes' : 'Add Item'}
-                </Text>
-              </TouchableOpacity>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Description</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.textArea]}
+                    value={formData.description}
+                    onChangeText={(value) => setFormData({ ...formData, description: value })}
+                    placeholder="Item description"
+                    placeholderTextColor={colors.inkMuted}
+                    multiline
+                    numberOfLines={4}
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <View style={styles.availabilityRow}>
+                    <Text style={[styles.formLabel, styles.formLabelInline]}>Available</Text>
+                    <Switch
+                      value={formData.isAvailable}
+                      onValueChange={(value) => setFormData({ ...formData, isAvailable: value })}
+                      trackColor={{ false: SWITCH_TRACK_OFF, true: colors.sage }}
+                      thumbColor={colors.white}
+                      ios_backgroundColor={SWITCH_TRACK_OFF}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formGroup}>
+                  <View style={styles.customizationHeader}>
+                    <Text style={[styles.formLabel, styles.formLabelInline]}>Customizations</Text>
+                    <TouchableOpacity
+                      style={styles.addCustomizationButton}
+                      onPress={handleAddCustomization}
+                    >
+                      <Feather name="plus" size={13} color={colors.sage} />
+                      <Text style={styles.addCustomizationText}>Add Customization</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {formData.customizations.map((custom, index) => (
+                    <View key={custom.id} style={styles.customizationForm}>
+                      <TextInput
+                        style={styles.formInput}
+                        value={custom.name}
+                        onChangeText={(value) => handleUpdateCustomization(index, 'name', value)}
+                        placeholder="Customization name"
+                        placeholderTextColor={colors.inkMuted}
+                      />
+
+                      <View style={styles.optionsHeader}>
+                        <Text style={styles.optionsLabel}>Options</Text>
+                        <TouchableOpacity
+                          style={styles.addOptionButton}
+                          onPress={() => handleAddOption(index)}
+                        >
+                          <Feather name="plus" size={12} color={colors.sage} />
+                          <Text style={styles.addOptionText}>Add Option</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      {custom.options.map((option, optionIndex) => (
+                        <TextInput
+                          key={optionIndex}
+                          style={[styles.formInput, styles.optionInput]}
+                          value={option}
+                          onChangeText={(value) => handleUpdateOption(index, optionIndex, value)}
+                          placeholder="Option name"
+                          placeholderTextColor={colors.inkMuted}
+                        />
+                      ))}
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setIsModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.saveButton,
+                    { opacity: !formData.name || !formData.price || !formData.category ? 0.6 : 1 }
+                  ]}
+                  onPress={handleSaveItem}
+                  disabled={!formData.name || !formData.price || !formData.category}
+                >
+                  <Text style={styles.saveButtonText}>
+                    {editingItem ? 'Save Changes' : 'Add Item'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-    </View>
+          </KeyboardAvoidingView>
+        </Modal>
+      </View>
+    </GradientScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: 10,
   },
-  searchContainer: {
+  searchField: {
     flexDirection: 'row',
     alignItems: 'center',
-    margin: 16,
-    paddingHorizontal: 16,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  searchIcon: {
-    marginRight: 12,
+    backgroundColor: colors.glassSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.25)',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    marginHorizontal: 22,
+    marginBottom: 12,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    height: '100%',
+    fontFamily: fonts.light,
+    fontSize: 13.5,
+    color: colors.ink,
+    paddingVertical: 12,
+    marginLeft: 10,
   },
   filterList: {
-    marginBottom: 8,
+    flexGrow: 0,
+    marginBottom: 13,
   },
   filterListContent: {
-    paddingHorizontal: 16,
+    paddingRight: 16,
   },
-  filterTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 12,
-    minWidth: 100,
-    justifyContent: 'center',
-  },
-  filterIcon: {
+  filterChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 13,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.32)',
+    backgroundColor: 'rgba(255,255,255,0.45)',
     marginRight: 8,
-    width: 16,
-    textAlign: 'center',
   },
-  filterTagText: {
-    fontSize: 15,
-    fontWeight: '600',
+  filterChipOn: {
+    backgroundColor: colors.sage,
+    borderColor: colors.sage,
+  },
+  filterChipText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+    color: colors.inkSoft,
+  },
+  filterChipTextOn: {
+    color: colors.white,
+    fontFamily: fonts.semibold,
+  },
+  filterChipCount: {
+    fontFamily: fonts.semibold,
+    color: colors.inkMuted,
+  },
+  filterChipCountOn: {
+    color: colors.white,
   },
   menuList: {
-    padding: 16,
+    paddingHorizontal: 22,
+    paddingBottom: 110,
   },
   menuCard: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    ...glassCard,
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 11,
+  },
+  menuCardOff: {
+    opacity: 0.78,
   },
   menuCardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
   },
   menuCardTitleSection: {
     flex: 1,
-    marginRight: 16,
+    marginRight: 10,
   },
   menuItemName: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 4,
+    ...display(16.5),
+  },
+  menuMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: 3,
   },
   menuItemCategory: {
-    fontSize: 14,
-    marginBottom: 8,
+    ...overline(10.5),
+    letterSpacing: 1.5,
+  },
+  menuItemPrice: {
+    fontFamily: fonts.medium,
+    fontSize: 12.5,
+    letterSpacing: 0.5,
+    color: colors.ink,
+    marginLeft: 8,
   },
   menuCardActions: {
     flexDirection: 'row',
@@ -780,116 +654,151 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   editButton: {
-    padding: 8,
+    width: 32,
+    height: 32,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   deleteButton: {
-    padding: 8,
+    width: 32,
+    height: 32,
     borderRadius: 8,
-  },
-  menuItemPrice: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(35,43,58,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   menuItemDescription: {
-    fontSize: 15,
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  customizationsSection: {
+    fontFamily: fonts.light,
+    fontSize: 11.5,
+    letterSpacing: 0.2,
+    lineHeight: 17,
+    color: colors.inkSoft,
     marginTop: 8,
   },
-  customizationsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  customizationItem: {
-    marginBottom: 12,
-  },
-  customizationName: {
-    fontSize: 15,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  optionsContainer: {
+  customChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
+    marginTop: 9,
   },
-  optionTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+  customChip: {
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.28)',
+    backgroundColor: 'rgba(255,255,255,0.42)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
-  optionText: {
-    fontSize: 14,
+  customChipText: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    letterSpacing: 0.4,
+    color: colors.inkSoft,
+  },
+  customChipName: {
+    fontFamily: fonts.semibold,
+    color: colors.sage,
+  },
+  hiddenTag: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(35,43,58,0.18)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginTop: 9,
+  },
+  hiddenTagText: {
+    fontFamily: fonts.semibold,
+    fontSize: 9.5,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    color: colors.inkMuted,
   },
   addButton: {
     position: 'absolute',
-    bottom: 24,
-    right: 24,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  addButtonGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
+    right: 22,
+    bottom: 28,
+    width: 54,
+    height: 54,
+    borderRadius: 999,
+    backgroundColor: colors.sage,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.sage,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 18,
+    elevation: 5,
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(35,43,58,0.45)',
   },
   modalContent: {
+    backgroundColor: colors.gradient[0],
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '90%',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 22,
+    paddingVertical: 18,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    borderBottomColor: colors.hairline,
   },
   modalTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    ...display(19),
+    letterSpacing: 1.6,
   },
   closeButton: {
-    padding: 4,
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    backgroundColor: colors.glassSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalScroll: {
-    padding: 20,
+    paddingHorizontal: 22,
+    paddingTop: 18,
   },
   formGroup: {
-    marginBottom: 20,
+    marginBottom: 18,
   },
   formLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
+    ...overline(10),
+    letterSpacing: 1.8,
+    marginBottom: 7,
+  },
+  formLabelInline: {
+    marginBottom: 0,
   },
   formInput: {
-    fontSize: 16,
-    padding: 12,
-    borderRadius: 12,
+    backgroundColor: colors.glassSoft,
     borderWidth: 1,
+    borderColor: colors.sageBorder,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontFamily: fonts.light,
+    fontSize: 14,
+    color: colors.ink,
   },
   textArea: {
-    minHeight: 100,
+    minHeight: 90,
     textAlignVertical: 'top',
   },
   availabilityRow: {
@@ -903,22 +812,27 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
     paddingVertical: 8,
+    paddingHorizontal: 13,
     borderRadius: 8,
-    borderWidth: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.32)',
+    backgroundColor: 'rgba(255,255,255,0.45)',
   },
-  selectedCategoryButton: {
-    borderColor: '#007AFF',
-  },
-  categoryIcon: {
-    marginRight: 8,
+  categoryButtonOn: {
+    backgroundColor: colors.sage,
+    borderColor: colors.sage,
   },
   categoryButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: colors.inkSoft,
+  },
+  categoryButtonTextOn: {
+    color: colors.white,
+    fontFamily: fonts.semibold,
   },
   customizationHeader: {
     flexDirection: 'row',
@@ -929,21 +843,25 @@ const styles = StyleSheet.create({
   addCustomizationButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    backgroundColor: 'rgba(255,255,255,0.45)',
     borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
   },
   addCustomizationText: {
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#007AFF',
+    ...overline(9.5),
+    letterSpacing: 1.2,
+    marginLeft: 6,
   },
   customizationForm: {
-    marginBottom: 16,
-    padding: 16,
+    backgroundColor: colors.glassSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.25)',
     borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    padding: 13,
+    marginBottom: 12,
   },
   optionsHeader: {
     flexDirection: 'row',
@@ -953,21 +871,24 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   optionsLabel: {
-    fontSize: 14,
-    fontWeight: '500',
+    ...overline(9.5),
+    letterSpacing: 1.4,
+    color: colors.inkMuted,
   },
   addOptionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    borderRadius: 7,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
   },
   addOptionText: {
-    marginLeft: 6,
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#007AFF',
+    ...overline(9),
+    letterSpacing: 1.1,
+    marginLeft: 5,
   },
   optionInput: {
     marginTop: 8,
@@ -975,29 +896,36 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    padding: 20,
-    gap: 12,
+    padding: 22,
+    gap: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
+    borderTopColor: colors.hairline,
   },
   cancelButton: {
+    borderWidth: 1,
+    borderColor: 'rgba(35,43,58,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 10,
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+    paddingHorizontal: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    color: colors.inkSoft,
   },
   saveButton: {
+    ...primaryButton,
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    backgroundColor: '#007AFF',
+    paddingHorizontal: 26,
   },
   saveButtonText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '600',
+    ...primaryButtonText,
+    fontSize: 12.5,
+    letterSpacing: 1.8,
   },
-}); 
+});

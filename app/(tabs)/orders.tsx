@@ -1,11 +1,12 @@
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { useColorScheme } from 'react-native';
-import { useState } from 'react';
-import { useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { useCallback, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { supabase } from '../../lib/supabase';
+import { colors, fonts, glassCard, display, overline } from '../../lib/theme';
+import GradientScreen from '../../components/GradientScreen';
 
 type OrderStatus = 'pending' | 'accepted' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 
@@ -31,7 +32,7 @@ const CURRENT_STATUSES: OrderStatus[] = ['pending', 'accepted', 'preparing', 're
 
 export default function OrdersScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
   const [selectedTab, setSelectedTab] = useState<'current' | 'past'>('current');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,23 +68,6 @@ export default function OrdersScreen() {
   const currentOrders = orders.filter(order => CURRENT_STATUSES.includes(order.status));
   const pastOrders = orders.filter(order => order.status === 'completed' || order.status === 'cancelled');
 
-  const getStatusColor = (status: OrderStatus) => {
-    switch (status) {
-      case 'pending':
-        return '#FF9500';
-      case 'accepted':
-        return '#007AFF';
-      case 'preparing':
-        return '#FFA500';
-      case 'ready':
-        return '#4CAF50';
-      case 'completed':
-        return '#666';
-      case 'cancelled':
-        return '#FF0000';
-    }
-  };
-
   const getStatusText = (status: OrderStatus) => {
     switch (status) {
       case 'pending':
@@ -101,272 +85,302 @@ export default function OrdersScreen() {
     }
   };
 
-  const renderOrder = (order: Order) => (
-    <TouchableOpacity
-      key={order.order_id}
-      style={[styles.orderCard, { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#fff' }]}
-      onPress={() => router.push(`/order/${order.order_id}`)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.orderHeader}>
-        {order.cafes?.profile_image_url ? (
-          <Image
-            source={{ uri: order.cafes.profile_image_url }}
-            style={styles.cafeImage}
-          />
-        ) : (
-          <View style={[styles.cafeImage, styles.cafeImagePlaceholder]}>
-            <FontAwesome name="coffee" size={20} color="#666" />
-          </View>
-        )}
-        <View style={styles.orderInfo}>
-          <Text style={[styles.cafeName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            {order.cafes?.name ?? 'Cafe'}
-          </Text>
-          <Text style={styles.orderDate}>
-            {new Date(order.created_at).toLocaleDateString()} at {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) }]}>
-          <Text style={styles.statusText}>{getStatusText(order.status)}</Text>
-        </View>
-      </View>
-
-      <View style={styles.orderItems}>
-        {order.order_items.map((item, index) => (
-          <View key={index} style={styles.orderItem}>
-            <Text style={[styles.itemName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-              {item.menu_items?.name ?? 'Item'} x{item.quantity}
+  const renderOrder = (order: Order) => {
+    const isActive = CURRENT_STATUSES.includes(order.status);
+    return (
+      <TouchableOpacity
+        key={order.order_id}
+        style={styles.orderCard}
+        onPress={() => router.push(`/order/${order.order_id}`)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.orderHeader}>
+          {order.cafes?.profile_image_url ? (
+            <Image
+              source={{ uri: order.cafes.profile_image_url }}
+              style={styles.cafeImage}
+            />
+          ) : (
+            <View style={[styles.cafeImage, styles.cafeImagePlaceholder]}>
+              <Feather name="coffee" size={18} color={colors.sage} />
+            </View>
+          )}
+          <View style={styles.orderInfo}>
+            <Text style={styles.cafeName}>{order.cafes?.name ?? 'Cafe'}</Text>
+            <Text style={styles.orderDate}>
+              {new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
-            <Text style={styles.itemPrice}>${(Number(item.unit_price) * Number(item.quantity)).toFixed(2)}</Text>
           </View>
-        ))}
-      </View>
+          <View style={[styles.statusChip, !isActive && styles.statusChipDone]}>
+            <Text style={[styles.statusChipText, !isActive && styles.statusChipTextDone]}>
+              {getStatusText(order.status)}
+            </Text>
+          </View>
+        </View>
 
-      <View style={styles.orderFooter}>
-        <Text style={styles.totalLabel}>Total</Text>
-        <Text style={styles.totalAmount}>${Number(order.total).toFixed(2)}</Text>
-      </View>
+        <View style={styles.orderItems}>
+          {order.order_items.map((item, index) => (
+            <View key={index} style={styles.orderItem}>
+              <Text style={styles.itemName}>
+                <Text style={styles.itemQty}>{item.quantity}× </Text>
+                {item.menu_items?.name ?? 'Item'}
+              </Text>
+              <Text style={styles.itemPrice}>${(Number(item.unit_price) * Number(item.quantity)).toFixed(2)}</Text>
+            </View>
+          ))}
+        </View>
 
-      <View style={styles.viewDetailsContainer}>
-        <Text style={styles.viewDetailsText}>View Details</Text>
-        <FontAwesome name="chevron-right" size={14} color="#007AFF" />
-      </View>
-    </TouchableOpacity>
-  );
+        <View style={styles.orderFooter}>
+          <Text style={styles.totalText}>Total</Text>
+          <Text style={styles.totalText}>${Number(order.total).toFixed(2)}</Text>
+        </View>
+
+        <View style={styles.viewDetailsRow}>
+          <Text style={styles.viewDetailsText}>View details</Text>
+          <Feather name="chevron-right" size={14} color={colors.sage} />
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-          Orders
-        </Text>
-      </View>
+    <GradientScreen>
+      <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+        <View style={styles.head}>
+          <Text style={styles.kicker}>BREAK</Text>
+          <Text style={styles.title}>Your orders</Text>
+        </View>
 
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            selectedTab === 'current' && styles.tabSelected,
-          ]}
-          onPress={() => setSelectedTab('current')}
-        >
-          <Text style={[
-            styles.tabText,
-            selectedTab === 'current' && styles.tabTextSelected,
-          ]}>
-            Current
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            selectedTab === 'past' && styles.tabSelected,
-          ]}
-          onPress={() => setSelectedTab('past')}
-        >
-          <Text style={[
-            styles.tabText,
-            selectedTab === 'past' && styles.tabTextSelected,
-          ]}>
-            Past
-          </Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.tabRow}>
+          <TouchableOpacity
+            style={[styles.tabChip, selectedTab === 'current' && styles.tabChipOn]}
+            onPress={() => setSelectedTab('current')}
+          >
+            <Text style={[styles.tabChipText, selectedTab === 'current' && styles.tabChipTextOn]}>
+              Current
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabChip, selectedTab === 'past' && styles.tabChipOn]}
+            onPress={() => setSelectedTab('past')}
+          >
+            <Text style={[styles.tabChipText, selectedTab === 'past' && styles.tabChipTextOn]}>
+              Past
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      <ScrollView style={styles.content}>
-        {selectedTab === 'current' ? (
-          currentOrders.length > 0 ? (
-            currentOrders.map(renderOrder)
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {selectedTab === 'current' ? (
+            currentOrders.length > 0 ? (
+              currentOrders.map(renderOrder)
+            ) : (
+              <View style={styles.emptyState}>
+                <Feather name="coffee" size={44} color={colors.inkMuted} />
+                <Text style={styles.emptyTitle}>
+                  {loading ? 'Loading orders…' : 'No current orders'}
+                </Text>
+                {!loading && (
+                  <Text style={styles.emptySub}>Order ahead and it will show up here.</Text>
+                )}
+              </View>
+            )
           ) : (
-            <View style={styles.emptyState}>
-              <FontAwesome name="coffee" size={48} color="#666" />
-              <Text style={[styles.emptyStateText, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-                {loading ? 'Loading orders...' : 'No current orders'}
-              </Text>
-            </View>
-          )
-        ) : (
-          pastOrders.length > 0 ? (
-            pastOrders.map(renderOrder)
-          ) : (
-            <View style={styles.emptyState}>
-              <FontAwesome name="history" size={48} color="#666" />
-              <Text style={[styles.emptyStateText, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-                {loading ? 'Loading orders...' : 'No past orders'}
-              </Text>
-            </View>
-          )
-        )}
-      </ScrollView>
-    </View>
+            pastOrders.length > 0 ? (
+              pastOrders.map(renderOrder)
+            ) : (
+              <View style={styles.emptyState}>
+                <Feather name="archive" size={44} color={colors.inkMuted} />
+                <Text style={styles.emptyTitle}>
+                  {loading ? 'Loading orders…' : 'No past orders'}
+                </Text>
+                {!loading && (
+                  <Text style={styles.emptySub}>Finished orders live here.</Text>
+                )}
+              </View>
+            )
+          )}
+        </ScrollView>
+      </View>
+    </GradientScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 22,
   },
-  header: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+  head: {
+    marginTop: 8,
+    marginBottom: 18,
+  },
+  kicker: {
+    ...overline(11),
+    letterSpacing: 3,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    ...display(28),
+    marginTop: 8,
   },
-  tabs: {
+  tabRow: {
     flexDirection: 'row',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    marginBottom: 14,
   },
-  tab: {
+  tabChip: {
     flex: 1,
-    paddingVertical: 8,
     alignItems: 'center',
+    paddingVertical: 10,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.32)',
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    marginHorizontal: 4,
   },
-  tabSelected: {
-    backgroundColor: '#007AFF',
+  tabChipOn: {
+    backgroundColor: colors.sage,
+    borderColor: colors.sage,
   },
-  tabText: {
-    fontSize: 16,
-    color: '#666',
+  tabChipText: {
+    fontFamily: fonts.medium,
+    fontSize: 11.5,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+    color: colors.inkSoft,
   },
-  tabTextSelected: {
-    color: '#fff',
-    fontWeight: 'bold',
+  tabChipTextOn: {
+    color: colors.white,
+    fontFamily: fonts.semibold,
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 24,
   },
   orderCard: {
-    margin: 16,
+    ...glassCard,
     borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    padding: 17,
+    marginBottom: 13,
   },
   orderHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   cafeImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     marginRight: 12,
   },
   cafeImagePlaceholder: {
-    backgroundColor: '#eee',
+    backgroundColor: colors.sageTint,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   orderInfo: {
     flex: 1,
+    marginRight: 8,
   },
   cafeName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    ...display(16),
+    marginBottom: 3,
   },
   orderDate: {
-    fontSize: 14,
-    color: '#666',
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: '#fff',
+    fontFamily: fonts.light,
     fontSize: 12,
-    fontWeight: 'bold',
+    letterSpacing: 0.2,
+    color: colors.inkSoft,
+  },
+  statusChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    backgroundColor: colors.sageTint,
+  },
+  statusChipDone: {
+    borderColor: colors.hairlineFaint,
+    backgroundColor: colors.glassSoft,
+  },
+  statusChipText: {
+    ...overline(9.5),
+    letterSpacing: 1.5,
+  },
+  statusChipTextDone: {
+    color: colors.inkMuted,
   },
   orderItems: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   orderItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'baseline',
+    paddingVertical: 4,
   },
   itemName: {
+    flex: 1,
+    fontFamily: fonts.light,
     fontSize: 14,
+    letterSpacing: 0.3,
+    color: colors.ink,
+    marginRight: 12,
+  },
+  itemQty: {
+    fontFamily: fonts.medium,
+    fontSize: 12.5,
+    color: colors.sage,
   },
   itemPrice: {
+    fontFamily: fonts.medium,
     fontSize: 14,
-    color: '#666',
+    color: colors.ink,
   },
   orderFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingTop: 16,
+    borderTopColor: colors.hairline,
+    paddingTop: 12,
   },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  totalText: {
+    ...display(17),
+    letterSpacing: 1.4,
   },
-  totalAmount: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#007AFF',
+  viewDetailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+  },
+  viewDetailsText: {
+    ...overline(10.5),
+    letterSpacing: 1.7,
+    marginRight: 4,
   },
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
+    paddingBottom: 80,
   },
-  emptyStateText: {
-    fontSize: 16,
+  emptyTitle: {
+    ...display(20),
     marginTop: 16,
+    marginBottom: 8,
   },
-  viewDetailsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    marginTop: 8,
-  },
-  viewDetailsText: {
-    color: '#007AFF',
+  emptySub: {
+    fontFamily: fonts.light,
     fontSize: 14,
-    marginRight: 4,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
+    textAlign: 'center',
   },
 });

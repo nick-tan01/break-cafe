@@ -1,13 +1,15 @@
 import { StyleSheet, View, Text, TouchableOpacity, TextInput } from 'react-native';
-import { useColorScheme, Alert } from 'react-native';
+import { Alert } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
+import { Feather } from '@expo/vector-icons';
 
 import { supabase } from '../../lib/supabase';
+import { colors, fonts, radius, display, overline, primaryButton, primaryButtonText } from '../../lib/theme';
+import GradientScreen from '../../components/GradientScreen';
 
 export default function SignUpScreen() {
-  const colorScheme = useColorScheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
@@ -33,62 +35,44 @@ export default function SignUpScreen() {
     setLoading(false)
   }
 // Confirm Email
-  
-  
+
+
 
   return (
-    <View style={[
-      styles.container,
-      { 
-        backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-      }
-    ]}>
-      <Stack.Screen 
-        options={{ 
-          headerShown: true,
-          title: 'Create Account',
-          headerStyle: {
-            backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
-          },
-          headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
-        }} 
-      />
+    <GradientScreen>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={[styles.container, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
+        <View style={styles.head}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Feather name="chevron-left" size={20} color={colors.ink} />
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-          Create Account
-        </Text>
-        <Text style={styles.subtitle}>
-          Sign up to start ordering from your favorite cafes
-        </Text>
+        <View style={styles.brand}>
+          <Text style={styles.kicker}>BREAK</Text>
+          <Text style={styles.headline}>Create your account</Text>
+          <Text style={styles.sub}>Sign up to start ordering from your favorite cafes</Text>
+        </View>
 
         <View style={styles.form}>
-          <View style={[
-            styles.inputContainer,
-            { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#f5f5f5' }
-          ]}>
-            <Text style={styles.label}>Full Name</Text>
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Full Name</Text>
             <TextInput
-              style={[styles.input, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}
+              style={styles.fieldInput}
               placeholder="Enter your full name"
-              placeholderTextColor="#666"
+              placeholderTextColor={colors.inkMuted}
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
             />
           </View>
 
-          <View style={[
-            styles.inputContainer,
-            { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#f5f5f5' }
-          ]}>
-            <Text style={styles.label}>Email</Text>
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Email</Text>
             <TextInput
-              style={[styles.input, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}
+              style={styles.fieldInput}
               placeholder="Enter your email"
-              placeholderTextColor="#666"
+              placeholderTextColor={colors.inkMuted}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -96,15 +80,12 @@ export default function SignUpScreen() {
             />
           </View>
 
-          <View style={[
-            styles.inputContainer,
-            { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#f5f5f5' }
-          ]}>
-            <Text style={styles.label}>Password</Text>
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Password</Text>
             <TextInput
-              style={[styles.input, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}
+              style={styles.fieldInput}
               placeholder="Create a password"
-              placeholderTextColor="#666"
+              placeholderTextColor={colors.inkMuted}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -112,110 +93,143 @@ export default function SignUpScreen() {
           </View>
           {showConfirm && (
             <>
-              <View style={[styles.inputContainer, { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#f5f5f5' }]}>
-                <Text style={styles.label}>Confirmation Code</Text>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Confirmation Code</Text>
                 <TextInput
-                  style={[styles.input, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}
+                  style={styles.fieldInput}
                   placeholder="Enter code sent to email"
-                  placeholderTextColor="#666"
+                  placeholderTextColor={colors.inkMuted}
                   value={confirmCode}
                   onChangeText={setConfirmCode}
                   keyboardType="numeric"
                 />
               </View>
 
-              <TouchableOpacity style={styles.signUpButton}>
-                <Text style={styles.signUpButtonText}>Confirm Account</Text>
+              <TouchableOpacity style={primaryButton}>
+                <Text style={primaryButtonText}>Confirm account</Text>
               </TouchableOpacity>
             </>
           )}
 
           {!showConfirm && (
             <TouchableOpacity
-              style={[styles.signUpButton, !name || !email || !password ? styles.signUpButtonDisabled : null]}
+              style={[primaryButton, (!name || !email || !password) && styles.btnDisabled]}
               onPress={handleSignUp}
               disabled={!name || !email || !password}
             >
-              <Text style={styles.signUpButtonText}>Create Account</Text>
+              <Text style={primaryButtonText}>Create account</Text>
             </TouchableOpacity>
           )}
 
 
-          <View style={styles.signInContainer}>
-            <Text style={styles.signInText}>Already have an account? </Text>
+          <View style={styles.switchRow}>
+            <Text style={styles.switchText}>Already have an account? </Text>
             <TouchableOpacity onPress={() => router.push('/sign-in')}>
-              <Text style={styles.signInLink}>Sign In</Text>
+              <Text style={styles.link}>Sign in</Text>
             </TouchableOpacity>
           </View>
-          {error ? <Text style={{ color: 'red', marginTop: 8 }}>{error}</Text> : null}
-          {loading && <Text style={{ marginTop: 8 }}>Processing...</Text>}
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {loading && <Text style={styles.loadingText}>Processing...</Text>}
         </View>
       </View>
-    </View>
+    </GradientScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 22,
   },
-  content: {
-    flex: 1,
-    padding: 24,
+  head: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.round,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    backgroundColor: colors.glassSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 32,
+  brand: {
+    marginTop: 22,
+    marginBottom: 28,
+  },
+  kicker: {
+    ...overline(11),
+    letterSpacing: 3,
+  },
+  headline: {
+    ...display(28),
+    marginTop: 10,
+  },
+  sub: {
+    fontFamily: fonts.light,
+    fontSize: 14,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
+    marginTop: 6,
   },
   form: {
-    gap: 16,
+    gap: 14,
   },
-  inputContainer: {
-    borderRadius: 12,
-    padding: 16,
+  field: {
+    backgroundColor: colors.glassSoft,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    borderRadius: radius.control,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  label: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+  fieldLabel: {
+    ...overline(10.5),
+    color: colors.inkMuted,
+    marginBottom: 6,
   },
-  input: {
-    fontSize: 16,
+  fieldInput: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.ink,
     padding: 0,
   },
-  signUpButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
+  btnDisabled: {
+    opacity: 0.55,
   },
-  signUpButtonDisabled: {
-    opacity: 0.5,
-  },
-  signUpButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  signInContainer: {
+  switchRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    alignItems: 'baseline',
+    marginTop: 10,
   },
-  signInText: {
-    color: '#666',
-    fontSize: 14,
+  switchText: {
+    fontFamily: fonts.light,
+    fontSize: 13.5,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
   },
-  signInLink: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '500',
+  link: {
+    fontFamily: fonts.medium,
+    fontSize: 13.5,
+    letterSpacing: 0.4,
+    color: colors.sage,
   },
-}); 
+  errorText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.ink,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  loadingText: {
+    fontFamily: fonts.light,
+    fontSize: 13,
+    color: colors.inkMuted,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+});

@@ -1,7 +1,9 @@
 import { StyleSheet, View, Text, ScrollView, Image } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { useColorScheme } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+
+import { colors, fonts, glassCard, display } from '../../../lib/theme';
+import GradientScreen from '../../../components/GradientScreen';
 
 interface Review {
   id: string;
@@ -49,23 +51,22 @@ const MOCK_REVIEWS: Review[] = [
 ];
 
 export default function ReviewsScreen() {
-  const colorScheme = useColorScheme();
   const { id } = useLocalSearchParams();
-  
+
   const renderStars = (rating: number) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
       if (i <= rating) {
         stars.push(
-          <FontAwesome key={i} name="star" size={16} color="#FFD700" style={styles.star} />
+          <FontAwesome key={i} name="star" size={16} color={colors.gold} style={styles.star} />
         );
       } else if (i - rating === 0.5) {
         stars.push(
-          <FontAwesome key={i} name="star-half-o" size={16} color="#FFD700" style={styles.star} />
+          <FontAwesome key={i} name="star-half-o" size={16} color={colors.gold} style={styles.star} />
         );
       } else {
         stars.push(
-          <FontAwesome key={i} name="star-o" size={16} color="#FFD700" style={styles.star} />
+          <FontAwesome key={i} name="star-o" size={16} color={colors.inkMuted} style={styles.star} />
         );
       }
     }
@@ -73,23 +74,26 @@ export default function ReviewsScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }]}>
+    <GradientScreen>
       <Stack.Screen
         options={{
           headerTitle: 'Reviews',
           headerStyle: {
-            backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
+            backgroundColor: colors.gradient[0],
           },
-          headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+          headerTintColor: colors.ink,
+          headerTitleStyle: {
+            fontFamily: fonts.display,
+            fontSize: 18,
+          },
+          headerShadowVisible: false,
           headerBackTitle: ' ',
         }}
       />
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.statsContainer}>
-          <Text style={[styles.averageRating, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            4.5
-          </Text>
+          <Text style={styles.averageRating}>4.5</Text>
           <View style={styles.starsContainer}>
             {renderStars(4.5)}
           </View>
@@ -98,46 +102,30 @@ export default function ReviewsScreen() {
 
         <View style={styles.reviewsContainer}>
           {MOCK_REVIEWS.map(review => (
-            <View 
-              key={review.id} 
-              style={[
-                styles.reviewCard,
-                { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#fff' }
-              ]}
-            >
+            <View key={review.id} style={styles.reviewCard}>
               <View style={styles.reviewHeader}>
                 <Image source={{ uri: review.userImage }} style={styles.userImage} />
                 <View style={styles.reviewHeaderText}>
-                  <Text style={[
-                    styles.userName,
-                    { color: colorScheme === 'dark' ? '#fff' : '#000' }
-                  ]}>
-                    {review.userName}
-                  </Text>
+                  <Text style={styles.userName}>{review.userName}</Text>
                   <View style={styles.ratingContainer}>
                     {renderStars(review.rating)}
                     <Text style={styles.reviewDate}>
-                      {new Date(review.date).toLocaleDateString()}
+                      {new Date(review.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </Text>
                   </View>
                 </View>
               </View>
 
-              <Text style={[
-                styles.reviewText,
-                { color: colorScheme === 'dark' ? '#fff' : '#000' }
-              ]}>
-                {review.comment}
-              </Text>
+              <Text style={styles.reviewText}>{review.comment}</Text>
 
               {review.images && (
-                <ScrollView 
-                  horizontal 
+                <ScrollView
+                  horizontal
                   showsHorizontalScrollIndicator={false}
                   style={styles.imagesContainer}
                 >
                   {review.images.map((image, index) => (
-                    <Image 
+                    <Image
                       key={index}
                       source={{ uri: image }}
                       style={styles.reviewImage}
@@ -149,14 +137,11 @@ export default function ReviewsScreen() {
           ))}
         </View>
       </ScrollView>
-    </View>
+    </GradientScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   scrollView: {
     flex: 1,
   },
@@ -164,11 +149,10 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: colors.hairline,
   },
   averageRating: {
-    fontSize: 48,
-    fontWeight: 'bold',
+    ...display(44),
     marginBottom: 8,
   },
   starsContainer: {
@@ -179,24 +163,18 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
   },
   totalReviews: {
-    fontSize: 14,
-    color: '#666',
+    fontFamily: fonts.light,
+    fontSize: 13,
+    letterSpacing: 0.4,
+    color: colors.inkSoft,
   },
   reviewsContainer: {
-    padding: 16,
+    padding: 18,
   },
   reviewCard: {
+    ...glassCard,
     padding: 16,
-    marginBottom: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginBottom: 14,
   },
   reviewHeader: {
     flexDirection: 'row',
@@ -206,14 +184,18 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
     marginRight: 12,
   },
   reviewHeaderText: {
     flex: 1,
   },
   userName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    letterSpacing: 0.5,
+    color: colors.ink,
     marginBottom: 4,
   },
   ratingContainer: {
@@ -221,12 +203,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   reviewDate: {
+    fontFamily: fonts.light,
     fontSize: 12,
-    color: '#666',
+    color: colors.inkMuted,
     marginLeft: 8,
   },
   reviewText: {
-    fontSize: 14,
+    fontFamily: fonts.light,
+    fontSize: 13.5,
+    letterSpacing: 0.2,
+    color: colors.ink,
     lineHeight: 20,
     marginBottom: 12,
   },
@@ -237,7 +223,9 @@ const styles = StyleSheet.create({
   reviewImage: {
     width: 200,
     height: 150,
-    borderRadius: 8,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
     marginRight: 8,
   },
-}); 
+});

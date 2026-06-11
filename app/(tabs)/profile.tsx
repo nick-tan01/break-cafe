@@ -1,19 +1,19 @@
 import { StyleSheet, View, Text, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { useColorScheme } from 'react-native';
-import { Stack, useRouter, useFocusEffect } from 'expo-router';
+import { Feather, FontAwesome } from '@expo/vector-icons';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useState } from 'react';
 
 import { supabase } from '../../lib/supabase';
+import { colors, fonts, radius, glassCard, display, overline, primaryButton, primaryButtonText } from '../../lib/theme';
+import GradientScreen from '../../components/GradientScreen';
 
 interface MenuItem {
   id: string;
   title: string;
-  icon: keyof typeof FontAwesome.glyphMap;
+  icon: keyof typeof Feather.glyphMap;
   onPress: () => void;
   badge?: string | number;
-  color?: string;
 }
 
 interface FavoriteCafe {
@@ -33,7 +33,6 @@ interface RecentOrder {
 }
 
 export default function ProfileScreen() {
-  const colorScheme = useColorScheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [isSignedIn, setIsSignedIn] = useState(true);
@@ -152,15 +151,15 @@ export default function ProfileScreen() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'preparing':
-        return '#FFA500';
+        return colors.inkSoft;
       case 'ready':
-        return '#4CAF50';
+        return colors.sage;
       case 'completed':
-        return '#666';
+        return colors.inkMuted;
       case 'cancelled':
-        return '#FF0000';
+        return colors.inkMuted;
       default:
-        return '#666';
+        return colors.inkMuted;
     }
   };
 
@@ -184,12 +183,11 @@ export default function ProfileScreen() {
       icon: 'bell',
       onPress: () => Alert.alert('Coming Soon', 'Notifications feature will be available soon!'),
       badge: '5',
-      color: '#FF3B30',
     },
     {
       id: '4',
       title: 'Help & Support',
-      icon: 'question-circle',
+      icon: 'help-circle',
       onPress: () => Alert.alert('Coming Soon', 'Help & Support feature will be available soon!'),
     },
     {
@@ -206,136 +204,110 @@ export default function ProfileScreen() {
     },
   ];
 
-  const renderMenuItem = ({ item }: { item: MenuItem }) => (
-    <TouchableOpacity 
+  const renderMenuItem = (item: MenuItem, index: number) => (
+    <TouchableOpacity
       key={item.id}
-      style={[
-        styles.menuItem,
-        { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#fff' }
-      ]} 
+      style={[styles.menuItem, index > 0 && styles.rowDivider]}
       onPress={item.onPress}
     >
       <View style={styles.menuItemLeft}>
-        <FontAwesome 
-          name={item.icon} 
-          size={20} 
-          color={item.color || '#666'} 
-          style={styles.menuIcon} 
-        />
-        <Text style={[
-          styles.menuTitle, 
-          { color: colorScheme === 'dark' ? '#fff' : '#000' },
-          item.color && { color: item.color }
-        ]}>
-          {item.title}
-        </Text>
+        <Feather name={item.icon} size={17} color={colors.sage} style={styles.menuIcon} />
+        <Text style={styles.menuTitle}>{item.title}</Text>
       </View>
       <View style={styles.menuItemRight}>
         {item.badge && (
-          <View style={[styles.badge, item.color && { backgroundColor: item.color }]}>
+          <View style={styles.badge}>
             <Text style={styles.badgeText}>{item.badge}</Text>
           </View>
         )}
-        <FontAwesome name="chevron-right" size={16} color="#666" style={styles.chevron} />
+        <Feather name="chevron-right" size={16} color={colors.inkMuted} />
       </View>
     </TouchableOpacity>
   );
 
   if (!isSignedIn) {
     return (
-      <View style={[
-        styles.container,
-        { 
-          backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-        }
-      ]}>
-        <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.signInContainer}>
-          <Text style={[styles.signInTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            Welcome to Cafe
-          </Text>
-          <Text style={styles.signInSubtitle}>
-            Sign in to access your profile, orders, and favorites
-          </Text>
-          <TouchableOpacity 
-            style={[styles.signInButton, { marginTop: 24 }]}
-            onPress={() => router.push('/(auth)/sign-in')}
-          >
-            <Text style={styles.signInButtonText}>Sign In</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.signUpButton, { marginTop: 12 }]}
-            onPress={() => router.push('/(auth)/sign-up')}
-          >
-            <Text style={styles.signUpButtonText}>Create Account</Text>
-          </TouchableOpacity>
+      <GradientScreen>
+        <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+          <View style={styles.greet}>
+            <Text style={styles.greetKicker}>Your account</Text>
+            <Text style={styles.greetTitle}>Profile</Text>
+          </View>
+          <View style={styles.signInContainer}>
+            <Feather name="coffee" size={44} color={colors.inkMuted} />
+            <Text style={styles.signInTitle}>Welcome to Cafe</Text>
+            <Text style={styles.signInSubtitle}>
+              Sign in to access your profile, orders, and favorites
+            </Text>
+            <TouchableOpacity
+              style={[primaryButton, styles.signInButton]}
+              onPress={() => router.push('/(auth)/sign-in')}
+            >
+              <Text style={primaryButtonText}>Sign In</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.signUpButton}
+              onPress={() => router.push('/(auth)/sign-up')}
+            >
+              <Text style={styles.signUpButtonText}>Create Account</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </GradientScreen>
     );
   }
 
   return (
-    <View style={[
-      styles.container,
-      { 
-        backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-      }
-    ]}>
-      <Stack.Screen options={{ headerShown: false }} />
-      
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={[styles.header, { borderBottomColor: colorScheme === 'dark' ? '#333' : '#eee' }]}>
-          <Image
-            source={{ uri: avatarUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=500' }}
-            style={styles.profileImage}
-          />
-          <View style={styles.profileInfo}>
-            <Text style={[styles.name, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-              {fullName || email || ''}
-            </Text>
-            <Text style={styles.email}>{email || ''}</Text>
-            <TouchableOpacity 
-              style={[
-                styles.editButton,
-                { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#f5f5f5' }
-              ]}
-              onPress={() => Alert.alert('Coming Soon', 'Edit profile feature will be available soon!')}
-            >
-              <FontAwesome name="pencil" size={14} color="#007AFF" />
-              <Text style={styles.editButtonText}>Edit Profile</Text>
+    <GradientScreen>
+      <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+        <View style={styles.greet}>
+          <Text style={styles.greetKicker}>Your account</Text>
+          <Text style={styles.greetTitle}>Profile</Text>
+        </View>
+
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          <View style={styles.card}>
+            <View style={styles.identityRow}>
+              <Image
+                source={{ uri: avatarUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=500' }}
+                style={styles.profileImage}
+              />
+              <View style={styles.profileInfo}>
+                <Text style={styles.name}>{fullName || email || ''}</Text>
+                <Text style={styles.email}>{email || ''}</Text>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => Alert.alert('Coming Soon', 'Edit profile feature will be available soon!')}
+                >
+                  <Feather name="edit-2" size={13} color={colors.sage} />
+                  <Text style={styles.editButtonText}>Edit Profile</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          <View style={[styles.card, styles.statsRow]}>
+            <TouchableOpacity style={styles.statItem} onPress={() => router.push('/orders')}>
+              <Text style={styles.statNumber}>12</Text>
+              <Text style={styles.statLabel}>Orders</Text>
+            </TouchableOpacity>
+            <View style={styles.statDivider} />
+            <TouchableOpacity style={styles.statItem}>
+              <View style={styles.ratingContainer}>
+                <Text style={styles.statNumber}>4.8</Text>
+                <FontAwesome name="star" size={14} color={colors.gold} style={styles.ratingStar} />
+              </View>
+              <Text style={styles.statLabel}>Rating</Text>
+            </TouchableOpacity>
+            <View style={styles.statDivider} />
+            <TouchableOpacity style={styles.statItem}>
+              <Text style={styles.statNumber}>$156</Text>
+              <Text style={styles.statLabel}>Spent</Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-        <View style={[styles.statsContainer, { borderBottomColor: colorScheme === 'dark' ? '#333' : '#eee' }]}>
-          <TouchableOpacity style={styles.statItem} onPress={() => router.push('/orders')}>
-            <Text style={styles.statNumber}>12</Text>
-            <Text style={styles.statLabel}>Orders</Text>
-          </TouchableOpacity>
-          <View style={styles.statDivider} />
-          <TouchableOpacity style={styles.statItem}>
-            <View style={styles.ratingContainer}>
-              <Text style={styles.statNumber}>4.8</Text>
-              <FontAwesome name="star" size={16} color="#FFD700" style={styles.ratingStar} />
-            </View>
-            <Text style={styles.statLabel}>Rating</Text>
-          </TouchableOpacity>
-          <View style={styles.statDivider} />
-          <TouchableOpacity style={styles.statItem}>
-            <Text style={styles.statNumber}>$156</Text>
-            <Text style={styles.statLabel}>Spent</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={[styles.section, { borderBottomColor: colorScheme === 'dark' ? '#333' : '#eee' }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-              Favorite Cafes
-            </Text>
+            <Text style={styles.sectionTitle}>Favorite Cafes</Text>
             <TouchableOpacity>
               <Text style={styles.seeAllButton}>See All</Text>
             </TouchableOpacity>
@@ -347,30 +319,29 @@ export default function ProfileScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.favoritesScroll}
+              contentContainerStyle={styles.favoritesScrollContent}
             >
               {favorites.map(cafe => (
                 <TouchableOpacity
                   key={cafe.id}
-                  style={[styles.favoriteCard, { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#fff' }]}
+                  style={styles.favoriteCard}
                   onPress={() => router.push(`/cafe/${cafe.id}`)}
                 >
                   {cafe.image ? (
                     <Image source={{ uri: cafe.image }} style={styles.favoriteImage} />
                   ) : (
                     <View style={[styles.favoriteImage, styles.favoriteImagePlaceholder]}>
-                      <FontAwesome name="coffee" size={32} color="#999" />
+                      <Feather name="coffee" size={32} color={colors.inkMuted} />
                     </View>
                   )}
                   <View style={styles.favoriteInfo}>
-                    <Text style={[styles.favoriteName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-                      {cafe.name}
-                    </Text>
+                    <Text style={styles.favoriteName}>{cafe.name}</Text>
                     <View style={styles.favoriteStats}>
                       <View style={styles.favoriteRating}>
-                        <FontAwesome name="star" size={12} color="#FFD700" />
+                        <FontAwesome name="star" size={12} color={colors.gold} />
                         <Text style={styles.favoriteRatingText}>{cafe.rating}</Text>
                       </View>
-                      <Text style={[styles.favoriteDistance, { flex: 1 }]} numberOfLines={1}>
+                      <Text style={styles.favoriteAddress} numberOfLines={1}>
                         {cafe.address}
                       </Text>
                     </View>
@@ -379,13 +350,9 @@ export default function ProfileScreen() {
               ))}
             </ScrollView>
           )}
-        </View>
 
-        <View style={[styles.section, { borderBottomColor: colorScheme === 'dark' ? '#333' : '#eee' }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-              Recent Orders
-            </Text>
+            <Text style={styles.sectionTitle}>Recent Orders</Text>
             <TouchableOpacity onPress={() => router.push('/orders')}>
               <Text style={styles.seeAllButton}>See All</Text>
             </TouchableOpacity>
@@ -393,298 +360,292 @@ export default function ProfileScreen() {
           {recentOrders.length === 0 ? (
             <Text style={styles.emptyText}>No orders yet</Text>
           ) : (
-            recentOrders.map(order => (
-              <TouchableOpacity
-                key={order.id}
-                style={[styles.orderCard, { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#fff' }]}
-                onPress={() => router.push(`/order/${order.id}`)}
-              >
-                <View style={styles.orderInfo}>
-                  <Text style={[styles.orderCafeName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-                    {order.cafeName}
-                  </Text>
-                  <Text style={styles.orderDate}>
-                    {new Date(order.date).toLocaleDateString()}
-                  </Text>
-                </View>
-                <View style={styles.orderDetails}>
-                  <Text style={styles.orderTotal}>${order.total.toFixed(2)}</Text>
-                  <View style={[styles.orderStatus, { backgroundColor: getStatusColor(order.status) }]}>
-                    <Text style={styles.orderStatusText}>
+            <View style={styles.card}>
+              {recentOrders.map((order, index) => (
+                <TouchableOpacity
+                  key={order.id}
+                  style={[styles.orderRow, index > 0 && styles.rowDivider]}
+                  onPress={() => router.push(`/order/${order.id}`)}
+                >
+                  <View style={styles.orderInfo}>
+                    <Text style={styles.orderCafeName}>{order.cafeName}</Text>
+                    <Text style={styles.orderDate}>
+                      {new Date(order.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </Text>
+                  </View>
+                  <View style={styles.orderDetails}>
+                    <Text style={styles.orderTotal}>${order.total.toFixed(2)}</Text>
+                    <Text style={[styles.orderStatus, { color: getStatusColor(order.status) }]}>
                       {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                     </Text>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))
+                </TouchableOpacity>
+              ))}
+            </View>
           )}
-        </View>
 
-        <View style={styles.menuContainer}>
-          {menuItems.map((item) => renderMenuItem({ item }))}
-          
-          <TouchableOpacity 
-            style={[
-              styles.signOutButton,
-              { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#fff' }
-            ]} 
-            onPress={handleSignOut}
-          >
-            <View style={styles.menuItemLeft}>
-              <FontAwesome 
-                name="sign-out" 
-                size={20} 
-                color="#FF3B30" 
-                style={styles.menuIcon} 
-              />
-              <Text style={[styles.menuTitle, { color: '#FF3B30' }]}>
-                Sign Out
-              </Text>
-            </View>
-            <FontAwesome name="chevron-right" size={16} color="#666" style={styles.chevron} />
-          </TouchableOpacity>
+          <View style={styles.card}>
+            <Text style={styles.cardHeading}>Settings</Text>
+            {menuItems.map((item, index) => renderMenuItem(item, index))}
+          </View>
 
-          <TouchableOpacity 
-            key="admin-portal"
-            style={[styles.menuItem, { backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#fff' }]}
-            onPress={() => router.push('/(cafe-admin)/login')}
-          >
-            <View style={styles.menuItemLeft}>
-              <FontAwesome name="coffee" size={24} color="#007AFF" style={styles.menuIcon} />
-              <Text style={[styles.menuTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>Cafe Admin Portal</Text>
-            </View>
-            <FontAwesome name="chevron-right" size={16} color="#666" style={styles.chevron} />
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </View>
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleSignOut}>
+              <View style={styles.menuItemLeft}>
+                <Feather name="log-out" size={17} color={colors.inkSoft} style={styles.menuIcon} />
+                <Text style={styles.signOutTitle}>Sign Out</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={colors.inkMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.menuItem, styles.rowDivider]}
+              onPress={() => router.push('/(cafe-admin)/login')}
+            >
+              <View style={styles.menuItemLeft}>
+                <Feather name="coffee" size={17} color={colors.sage} style={styles.menuIcon} />
+                <Text style={styles.menuTitle}>Cafe Admin Portal</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={colors.inkMuted} />
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
+    </GradientScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 22,
   },
-  scrollView: {
-    flex: 1,
+  greet: {
+    marginTop: 8,
+    marginBottom: 18,
   },
-  header: {
-    padding: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+  greetKicker: {
+    ...overline(11),
+    letterSpacing: 3,
+  },
+  greetTitle: {
+    ...display(28),
+    marginTop: 8,
+  },
+  scrollContent: {
+    paddingBottom: 32,
+  },
+  card: {
+    ...glassCard,
+    borderRadius: 12,
+    padding: 17,
+    marginBottom: 13,
+  },
+  identityRow: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 16,
+    width: 76,
+    height: 76,
+    borderRadius: radius.round,
+    borderWidth: 2,
+    borderColor: colors.glassBorder,
   },
   profileInfo: {
-    alignItems: 'center',
+    flex: 1,
+    marginLeft: 15,
   },
   name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    textAlign: 'center',
+    ...display(20),
   },
   email: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 12,
-    textAlign: 'center',
+    fontFamily: fonts.light,
+    fontSize: 13,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
+    marginTop: 3,
   },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    backgroundColor: colors.glassSoft,
+    borderRadius: radius.chip,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
   },
   editButtonText: {
-    color: '#007AFF',
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: '500',
+    fontFamily: fonts.semibold,
+    fontSize: 10.5,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    color: colors.sage,
+    marginLeft: 7,
   },
-  statsContainer: {
+  statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    alignItems: 'center',
   },
   statItem: {
-    alignItems: 'center',
     flex: 1,
+    alignItems: 'center',
   },
   statDivider: {
     width: 1,
-    height: '100%',
-    backgroundColor: '#eee',
+    height: 34,
+    backgroundColor: colors.hairlineFaint,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   ratingStar: {
-    marginLeft: 4,
+    marginLeft: 5,
   },
   statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 4,
+    ...display(21),
   },
   statLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  section: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    ...overline(10),
+    color: colors.inkMuted,
+    marginTop: 5,
   },
   sectionHeader: {
     flexDirection: 'row',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    marginTop: 8,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fonts.display,
+    fontSize: 14,
+    letterSpacing: 2.8,
+    textTransform: 'uppercase',
+    color: colors.sage,
   },
   seeAllButton: {
-    color: '#007AFF',
-    fontSize: 14,
+    ...overline(12),
+    letterSpacing: 1.7,
   },
   favoritesScroll: {
-    marginHorizontal: -16,
-    paddingHorizontal: 16,
+    marginHorizontal: -22,
+  },
+  favoritesScrollContent: {
+    paddingHorizontal: 22,
+    paddingBottom: 18,
   },
   favoriteCard: {
+    ...glassCard,
     width: 200,
-    marginRight: 16,
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginRight: 12,
   },
   favoriteImage: {
     width: '100%',
-    height: 120,
+    height: 110,
+    borderTopLeftRadius: radius.card - 1,
+    borderTopRightRadius: radius.card - 1,
   },
   favoriteImagePlaceholder: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: colors.sageTint,
     alignItems: 'center',
     justifyContent: 'center',
   },
   emptyText: {
-    fontSize: 14,
-    color: '#666',
-    paddingVertical: 8,
+    fontFamily: fonts.light,
+    fontSize: 13.5,
+    letterSpacing: 0.3,
+    color: colors.inkMuted,
+    marginBottom: 13,
   },
   favoriteInfo: {
     padding: 12,
   },
   favoriteName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
+    ...display(15),
   },
   favoriteStats: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 6,
   },
   favoriteRating: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   favoriteRatingText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.ink,
     marginLeft: 4,
-    fontSize: 12,
-    color: '#666',
   },
-  favoriteDistance: {
+  favoriteAddress: {
+    flex: 1,
+    fontFamily: fonts.light,
     fontSize: 12,
-    color: '#666',
+    color: colors.inkSoft,
   },
-  orderCard: {
+  orderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingVertical: 11,
+  },
+  rowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: colors.hairlineFaint,
   },
   orderInfo: {
     flex: 1,
+    marginRight: 12,
   },
   orderCafeName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontFamily: fonts.medium,
+    fontSize: 14.5,
+    letterSpacing: 0.5,
+    color: colors.ink,
   },
   orderDate: {
-    fontSize: 14,
-    color: '#666',
+    fontFamily: fonts.light,
+    fontSize: 12,
+    letterSpacing: 0.2,
+    color: colors.inkSoft,
+    marginTop: 3,
   },
   orderDetails: {
     alignItems: 'flex-end',
   },
   orderTotal: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#007AFF',
-    marginBottom: 4,
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.ink,
   },
   orderStatus: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    letterSpacing: 0.8,
+    marginTop: 3,
   },
-  orderStatusText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  menuContainer: {
-    padding: 16,
+  cardHeading: {
+    fontFamily: fonts.display,
+    fontSize: 14,
+    letterSpacing: 2.8,
+    textTransform: 'uppercase',
+    color: colors.sage,
+    marginBottom: 6,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    marginBottom: 8,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingVertical: 13,
   },
   menuItemLeft: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -693,88 +654,74 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   menuIcon: {
-    marginRight: 16,
-    width: 24,
+    width: 22,
     textAlign: 'center',
+    marginRight: 13,
   },
   menuTitle: {
-    fontSize: 16,
+    fontFamily: fonts.regular,
+    fontSize: 14.5,
+    letterSpacing: 0.4,
+    color: colors.ink,
+  },
+  signOutTitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14.5,
+    letterSpacing: 0.4,
+    color: colors.inkSoft,
   },
   badge: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 8,
+    backgroundColor: colors.sage,
+    borderRadius: radius.round,
+    minWidth: 20,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    alignItems: 'center',
+    marginRight: 9,
   },
   badgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  chevron: {
-    marginLeft: 4,
+    color: colors.white,
+    fontFamily: fonts.semibold,
+    fontSize: 11,
   },
   signInContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    paddingBottom: 80,
   },
   signInTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 12,
+    ...display(22),
+    marginTop: 16,
+    marginBottom: 8,
     textAlign: 'center',
   },
   signInSubtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontFamily: fonts.light,
+    fontSize: 14,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
     textAlign: 'center',
     marginBottom: 24,
   },
   signInButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
     width: '100%',
-    alignItems: 'center',
-  },
-  signInButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
   signUpButton: {
-    backgroundColor: 'transparent',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
     width: '100%',
-    alignItems: 'center',
+    marginTop: 12,
+    paddingVertical: 15,
+    borderRadius: radius.control,
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: colors.sageBorder,
+    backgroundColor: colors.glassSoft,
+    alignItems: 'center',
   },
   signUpButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    letterSpacing: 2.2,
+    textTransform: 'uppercase',
+    color: colors.sage,
   },
-  signOutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    marginTop: 24,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-}); 
+});

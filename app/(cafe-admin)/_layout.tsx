@@ -1,12 +1,10 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { useColorScheme } from 'react-native';
 
 import { supabase } from '../../lib/supabase';
+import { colors, fonts } from '../../lib/theme';
 
 export default function CafeAdminLayout() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const router = useRouter();
   const segments = useSegments();
   const [checked, setChecked] = useState(false);
@@ -32,14 +30,13 @@ export default function CafeAdminLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: {
-          backgroundColor: isDark ? '#000' : '#fff',
-        },
-        headerTintColor: isDark ? '#fff' : '#000',
-        headerTitleStyle: {
-          fontWeight: '600',
-        },
+        headerStyle: { backgroundColor: '#EDF0F7' },
+        headerTintColor: colors.ink,
+        headerTitleStyle: { fontFamily: fonts.display, fontSize: 18, color: colors.ink },
         headerShadowVisible: false,
+        // back button shows only the chevron — never the previous route's
+        // internal name like "(cafe-admin)"
+        headerBackButtonDisplayMode: 'minimal',
       }}
     >
       <Stack.Screen
@@ -80,4 +77,4 @@ export default function CafeAdminLayout() {
       />
     </Stack>
   );
-} 
+}

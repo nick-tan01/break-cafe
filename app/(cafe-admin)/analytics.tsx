@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { Stack } from 'expo-router';
-import { useColorScheme } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
+
+import { colors, fonts, glassCard, display, overline } from '../../lib/theme';
+import GradientScreen from '../../components/GradientScreen';
 
 interface SalesData {
   date: string;
@@ -86,14 +87,10 @@ const MOCK_DATA = {
 
 type TimeRange = 'daily' | 'weekly' | 'monthly';
 
-export default function Analytics() {
-  const colorScheme = useColorScheme();
-  const [timeRange, setTimeRange] = useState<TimeRange>('daily');
+const TIME_RANGES: TimeRange[] = ['daily', 'weekly', 'monthly'];
 
-  const isDark = colorScheme === 'dark';
-  const textColor = isDark ? '#fff' : '#000';
-  const bgColor = isDark ? '#000' : '#fff';
-  const cardBgColor = isDark ? '#1c1c1e' : '#f2f2f7';
+export default function Analytics() {
+  const [timeRange, setTimeRange] = useState<TimeRange>('daily');
 
   const getMaxSales = (data: SalesData[]) => {
     if (!data || data.length === 0) return 0;
@@ -103,8 +100,7 @@ export default function Analytics() {
   const renderSalesChart = () => {
     const data = MOCK_DATA.revenueData[timeRange];
     const maxSales = getMaxSales(data);
-    const chartHeight = 200;
-    const barWidth = (Dimensions.get('window').width - 64) / data.length - 8;
+    const chartHeight = 170;
 
     return (
       <View style={styles.chartContainer}>
@@ -112,18 +108,8 @@ export default function Analytics() {
           const barHeight = (item.amount / maxSales) * chartHeight;
           return (
             <View key={index} style={styles.barContainer}>
-              <View 
-                style={[
-                  styles.bar,
-                  { 
-                    height: barHeight,
-                    backgroundColor: '#007AFF'
-                  }
-                ]} 
-              />
-              <Text style={[styles.barLabel, { color: textColor }]}>
-                {item.date}
-              </Text>
+              <View style={[styles.bar, { height: barHeight }]} />
+              <Text style={styles.barLabel}>{item.date}</Text>
             </View>
           );
         })}
@@ -132,112 +118,89 @@ export default function Analytics() {
   };
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerTitle: "Analytics",
-          headerStyle: {
-            backgroundColor: bgColor,
-          },
-          headerTintColor: textColor,
-          headerTitleStyle: {
-            fontWeight: '600',
-          },
-        }}
-      />
-      <ScrollView style={[styles.container, { backgroundColor: bgColor }]}>
+    <GradientScreen>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* Overview Cards */}
-        <View style={styles.overviewContainer}>
-          <View style={[styles.overviewCard, { backgroundColor: cardBgColor }]}>
-            <FontAwesome name="dollar" size={24} color="#007AFF" />
-            <Text style={[styles.overviewValue, { color: textColor }]}>
-              ${MOCK_DATA.overview.totalSales.toLocaleString()}
-            </Text>
-            <Text style={styles.overviewLabel}>Total Sales</Text>
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Total Sales</Text>
+            <View style={styles.statValueRow}>
+              <Feather name="dollar-sign" size={15} color={colors.sage} />
+              <Text style={styles.statValue}>
+                ${MOCK_DATA.overview.totalSales.toLocaleString()}
+              </Text>
+            </View>
           </View>
-          <View style={[styles.overviewCard, { backgroundColor: cardBgColor }]}>
-            <FontAwesome name="shopping-cart" size={24} color="#007AFF" />
-            <Text style={[styles.overviewValue, { color: textColor }]}>
-              {MOCK_DATA.overview.totalOrders}
-            </Text>
-            <Text style={styles.overviewLabel}>Total Orders</Text>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Total Orders</Text>
+            <View style={styles.statValueRow}>
+              <Feather name="shopping-cart" size={15} color={colors.sage} />
+              <Text style={styles.statValue}>{MOCK_DATA.overview.totalOrders}</Text>
+            </View>
           </View>
-          <View style={[styles.overviewCard, { backgroundColor: cardBgColor }]}>
-            <FontAwesome name="calculator" size={24} color="#007AFF" />
-            <Text style={[styles.overviewValue, { color: textColor }]}>
-              ${MOCK_DATA.overview.averageOrderValue.toFixed(2)}
-            </Text>
-            <Text style={styles.overviewLabel}>Avg. Order Value</Text>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Avg. Order Value</Text>
+            <View style={styles.statValueRow}>
+              <Feather name="trending-up" size={15} color={colors.sage} />
+              <Text style={styles.statValue}>
+                ${MOCK_DATA.overview.averageOrderValue.toFixed(2)}
+              </Text>
+            </View>
           </View>
-          <View style={[styles.overviewCard, { backgroundColor: cardBgColor }]}>
-            <FontAwesome name="users" size={24} color="#007AFF" />
-            <Text style={[styles.overviewValue, { color: textColor }]}>
-              {MOCK_DATA.overview.newCustomers}
-            </Text>
-            <Text style={styles.overviewLabel}>New Customers</Text>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>New Customers</Text>
+            <View style={styles.statValueRow}>
+              <Feather name="users" size={15} color={colors.sage} />
+              <Text style={styles.statValue}>{MOCK_DATA.overview.newCustomers}</Text>
+            </View>
           </View>
         </View>
 
         {/* Revenue Chart */}
-        <View style={[styles.section, { backgroundColor: cardBgColor }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: textColor }]}>Revenue</Text>
-            <View style={styles.timeRangeSelector}>
-              <TouchableOpacity
-                style={[
-                  styles.timeRangeButton,
-                  timeRange === 'daily' && styles.timeRangeButtonActive
-                ]}
-                onPress={() => setTimeRange('daily')}
-              >
-                <Text style={[
-                  styles.timeRangeButtonText,
-                  timeRange === 'daily' && styles.timeRangeButtonTextActive
-                ]}>Daily</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.timeRangeButton,
-                  timeRange === 'weekly' && styles.timeRangeButtonActive
-                ]}
-                onPress={() => setTimeRange('weekly')}
-              >
-                <Text style={[
-                  styles.timeRangeButtonText,
-                  timeRange === 'weekly' && styles.timeRangeButtonTextActive
-                ]}>Weekly</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.timeRangeButton,
-                  timeRange === 'monthly' && styles.timeRangeButtonActive
-                ]}
-                onPress={() => setTimeRange('monthly')}
-              >
-                <Text style={[
-                  styles.timeRangeButtonText,
-                  timeRange === 'monthly' && styles.timeRangeButtonTextActive
-                ]}>Monthly</Text>
-              </TouchableOpacity>
+        <View style={styles.card}>
+          <View style={styles.cardHead}>
+            <Text style={styles.cardHeading}>Revenue</Text>
+            <View style={styles.chipRow}>
+              {TIME_RANGES.map((range) => (
+                <TouchableOpacity
+                  key={range}
+                  style={[styles.chip, timeRange === range && styles.chipOn]}
+                  onPress={() => setTimeRange(range)}
+                >
+                  <Text style={[styles.chipText, timeRange === range && styles.chipTextOn]}>
+                    {range}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
           {renderSalesChart()}
         </View>
 
         {/* Top Products */}
-        <View style={[styles.section, { backgroundColor: cardBgColor }]}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>Top Products</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardHeading}>Top Products</Text>
           {MOCK_DATA.topProducts.map((product, index) => (
-            <View key={index} style={styles.productRow}>
+            <View
+              key={index}
+              style={[
+                styles.productRow,
+                index < MOCK_DATA.topProducts.length - 1 && styles.rowDivider,
+              ]}
+            >
               <View style={styles.productInfo}>
-                <Text style={[styles.productName, { color: textColor }]}>
-                  {index + 1}. {product.name}
+                <Text style={styles.productName}>
+                  <Text style={styles.productRank}>{index + 1} · </Text>
+                  {product.name}
                 </Text>
                 <Text style={styles.productQuantity}>
                   {product.quantity} units sold
                 </Text>
               </View>
-              <Text style={[styles.productRevenue, { color: textColor }]}>
+              <Text style={styles.productRevenue}>
                 ${product.revenue.toLocaleString()}
               </Text>
             </View>
@@ -245,29 +208,29 @@ export default function Analytics() {
         </View>
 
         {/* Customer Insights */}
-        <View style={[styles.section, { backgroundColor: cardBgColor }]}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>Customer Insights</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardHeading}>Customer Insights</Text>
           <View style={styles.metricsGrid}>
             <View style={styles.metricItem}>
-              <Text style={[styles.metricValue, { color: textColor }]}>
+              <Text style={styles.metricValue}>
                 {MOCK_DATA.customerMetrics.totalCustomers.toLocaleString()}
               </Text>
               <Text style={styles.metricLabel}>Total Customers</Text>
             </View>
             <View style={styles.metricItem}>
-              <Text style={[styles.metricValue, { color: textColor }]}>
+              <Text style={styles.metricValue}>
                 {MOCK_DATA.customerMetrics.newCustomers}
               </Text>
               <Text style={styles.metricLabel}>New Customers</Text>
             </View>
             <View style={styles.metricItem}>
-              <Text style={[styles.metricValue, { color: textColor }]}>
+              <Text style={styles.metricValue}>
                 {MOCK_DATA.customerMetrics.averageVisits}
               </Text>
               <Text style={styles.metricLabel}>Avg. Visits/Month</Text>
             </View>
             <View style={styles.metricItem}>
-              <Text style={[styles.metricValue, { color: textColor }]}>
+              <Text style={styles.metricValue}>
                 {MOCK_DATA.customerMetrics.retentionRate}%
               </Text>
               <Text style={styles.metricLabel}>Retention Rate</Text>
@@ -276,23 +239,21 @@ export default function Analytics() {
         </View>
 
         {/* Peak Hours */}
-        <View style={[styles.section, { backgroundColor: cardBgColor }]}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>Peak Hours</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardHeading}>Peak Hours</Text>
           <View style={styles.peakHoursContainer}>
             {MOCK_DATA.peakHours.map((hour, index) => {
               const maxOrders = Math.max(...MOCK_DATA.peakHours.map(h => h.orders));
               const barHeight = (hour.orders / maxOrders) * 100;
               return (
                 <View key={index} style={styles.peakHourBar}>
-                  <View 
+                  <View
                     style={[
                       styles.peakHourBarFill,
                       { height: `${barHeight}%` }
-                    ]} 
+                    ]}
                   />
-                  <Text style={[styles.peakHourLabel, { color: textColor }]}>
-                    {hour.hour}
-                  </Text>
+                  <Text style={styles.peakHourLabel}>{hour.hour}</Text>
                   <Text style={styles.peakHourValue}>{hour.orders}</Text>
                 </View>
               );
@@ -300,78 +261,99 @@ export default function Analytics() {
           </View>
         </View>
       </ScrollView>
-    </>
+    </GradientScreen>
   );
 }
 
+const { width } = Dimensions.get('window');
+const cardWidth = (width - 54) / 2;
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  scrollContent: {
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    paddingBottom: 28,
   },
-  overviewContainer: {
+  statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    padding: 16,
-    gap: 16,
+    gap: 10,
+    marginBottom: 13,
   },
-  overviewCard: {
-    flex: 1,
-    minWidth: '45%',
-    padding: 16,
+  statCard: {
+    ...glassCard,
     borderRadius: 12,
-    alignItems: 'center',
+    width: cardWidth,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
   },
-  overviewValue: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginVertical: 8,
+  statLabel: {
+    ...overline(9.5),
+    color: colors.inkMuted,
+    letterSpacing: 1.6,
   },
-  overviewLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  section: {
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
-  },
-  sectionHeader: {
+  statValueRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 7,
+  },
+  statValue: {
+    ...display(21),
+    marginLeft: 7,
+  },
+  card: {
+    ...glassCard,
+    borderRadius: 12,
+    padding: 17,
+    marginBottom: 13,
+  },
+  cardHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 6,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  timeRangeSelector: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    borderRadius: 8,
-    padding: 4,
-  },
-  timeRangeButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-  },
-  timeRangeButtonActive: {
-    backgroundColor: '#007AFF',
-  },
-  timeRangeButtonText: {
+  cardHeading: {
+    fontFamily: fonts.display,
     fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
+    letterSpacing: 2.8,
+    textTransform: 'uppercase',
+    color: colors.sage,
+    marginBottom: 6,
   },
-  timeRangeButtonTextActive: {
-    color: '#fff',
+  chipRow: {
+    flexDirection: 'row',
+  },
+  chip: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.32)',
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    marginLeft: 6,
+  },
+  chipOn: {
+    backgroundColor: colors.sage,
+    borderColor: colors.sage,
+  },
+  chipText: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: colors.inkSoft,
+  },
+  chipTextOn: {
+    color: colors.white,
+    fontFamily: fonts.semibold,
   },
   chartContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     height: 200,
-    paddingVertical: 16,
+    paddingTop: 16,
+    paddingBottom: 4,
   },
   barContainer: {
     flex: 1,
@@ -381,53 +363,67 @@ const styles = StyleSheet.create({
   bar: {
     width: '100%',
     borderRadius: 4,
+    backgroundColor: colors.sage,
   },
   barLabel: {
-    fontSize: 12,
+    fontFamily: fonts.light,
+    fontSize: 10.5,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
     marginTop: 8,
   },
   productRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 11,
+  },
+  rowDivider: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    borderBottomColor: colors.hairlineFaint,
   },
   productInfo: {
     flex: 1,
+    marginRight: 12,
   },
   productName: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    letterSpacing: 0.3,
+    color: colors.ink,
+  },
+  productRank: {
+    fontFamily: fonts.medium,
+    fontSize: 12.5,
+    color: colors.sage,
   },
   productQuantity: {
-    fontSize: 14,
-    color: '#666',
+    fontFamily: fonts.light,
+    fontSize: 11.5,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
+    marginTop: 2,
   },
   productRevenue: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...display(15),
   },
   metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    marginTop: 4,
   },
   metricItem: {
-    flex: 1,
-    minWidth: '45%',
-    alignItems: 'center',
+    width: '50%',
+    paddingVertical: 9,
   },
   metricValue: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 4,
+    ...display(20),
   },
   metricLabel: {
-    fontSize: 14,
-    color: '#666',
+    ...overline(9),
+    color: colors.inkMuted,
+    letterSpacing: 1.4,
+    marginTop: 4,
   },
   peakHoursContainer: {
     flexDirection: 'row',
@@ -439,20 +435,24 @@ const styles = StyleSheet.create({
   peakHourBar: {
     flex: 1,
     alignItems: 'center',
-    marginHorizontal: 4,
+    marginHorizontal: 3,
   },
   peakHourBarFill: {
     width: '100%',
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.sage,
     borderRadius: 4,
   },
   peakHourLabel: {
-    fontSize: 12,
-    marginTop: 8,
+    fontFamily: fonts.light,
+    fontSize: 9.5,
+    letterSpacing: 0.2,
+    color: colors.inkSoft,
+    marginTop: 7,
   },
   peakHourValue: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
+    fontFamily: fonts.light,
+    fontSize: 9.5,
+    color: colors.inkMuted,
+    marginTop: 2,
   },
-}); 
+});

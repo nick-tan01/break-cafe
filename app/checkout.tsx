@@ -1,17 +1,20 @@
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, TextInput, Platform, Alert } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { useColorScheme } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { useCart } from '../lib/cart';
 import { supabase } from '../lib/supabase';
+import { colors, fonts, glassCard, display, overline, primaryButton, primaryButtonText } from '../lib/theme';
+import GradientScreen from '../components/GradientScreen';
 
 const TIP_OPTIONS = [0, 10, 15, 20];
 
 export default function CheckoutScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
   const [notes, setNotes] = useState('');
   const [tipPercent, setTipPercent] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -70,321 +73,357 @@ export default function CheckoutScreen() {
 
   if (items.length === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }]}>
+      <GradientScreen>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <FontAwesome name="arrow-left" size={20} color="#007AFF" />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            Checkout
-          </Text>
+        <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+          <View style={styles.head}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+              <Feather name="chevron-left" size={20} color={colors.ink} />
+            </TouchableOpacity>
+            <Text style={styles.headTitle}>Checkout</Text>
+          </View>
+          <View style={styles.emptyState}>
+            <Feather name="coffee" size={44} color={colors.inkMuted} />
+            <Text style={styles.emptyTitle}>Your cart is empty</Text>
+            <Text style={styles.emptySub}>Add something from a cafe to get started.</Text>
+            <TouchableOpacity style={[primaryButton, styles.emptyBtn]} onPress={() => router.back()}>
+              <Text style={primaryButtonText}>Browse cafes</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        <View style={styles.emptyState}>
-          <FontAwesome name="shopping-basket" size={48} color="#666" />
-          <Text style={[styles.emptyStateTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            Your cart is empty
-          </Text>
-          <Text style={styles.emptyStateSubtitle}>
-            Add some items from a cafe to get started.
-          </Text>
-          <TouchableOpacity style={styles.emptyStateButton} onPress={() => router.back()}>
-            <Text style={styles.emptyStateButtonText}>Browse Cafes</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      </GradientScreen>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' }]}>
+    <GradientScreen>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <FontAwesome name="arrow-left" size={20} color="#007AFF" />
+      <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+        <View style={styles.head}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Feather name="chevron-left" size={20} color={colors.ink} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            Checkout
-          </Text>
+          <Text style={styles.headTitle}>Checkout</Text>
         </View>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            Order Summary{cafeName ? ` — ${cafeName}` : ''}
-          </Text>
-          {items.map((item) => (
-            <View key={item.menuItemId} style={styles.orderItem}>
-              <View style={styles.orderItemInfo}>
-                <Text style={[styles.orderItemName, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          <View style={styles.card}>
+            <View style={styles.pickupRow}>
+              <View style={styles.pickupBadge}>
+                <Feather name="clock" size={19} color={colors.sage} />
+              </View>
+              <View style={styles.pickupInfo}>
+                <Text style={styles.pickupTitle}>
+                  Pickup{cafeName ? ` at ${cafeName}` : ''}
+                </Text>
+                <Text style={styles.pickupSub}>Ready in about 10 min</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardHeading}>Your order</Text>
+            {items.map((item) => (
+              <View key={item.menuItemId} style={styles.orderRow}>
+                <Text style={styles.orderName}>
+                  <Text style={styles.orderQty}>{item.quantity}× </Text>
                   {item.name}
                 </Text>
-                <Text style={styles.orderItemQuantity}>x{item.quantity}</Text>
-              </View>
-              <Text style={styles.orderItemPrice}>
-                ${(Number(item.price) * item.quantity).toFixed(2)}
-              </Text>
-            </View>
-          ))}
-          <View style={styles.divider} />
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>${Number(subtotal).toFixed(2)}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Tip</Text>
-            <Text style={styles.summaryValue}>${tip.toFixed(2)}</Text>
-          </View>
-          <View style={[styles.summaryRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            Add a Tip
-          </Text>
-          <View style={styles.tipRow}>
-            {TIP_OPTIONS.map((pct) => (
-              <TouchableOpacity
-                key={pct}
-                style={[styles.tipOption, tipPercent === pct && styles.tipOptionSelected]}
-                onPress={() => setTipPercent(pct)}
-              >
-                <Text style={[styles.tipOptionText, tipPercent === pct && styles.tipOptionTextSelected]}>
-                  {pct === 0 ? 'No tip' : `${pct}%`}
+                <Text style={styles.orderPrice}>
+                  ${(Number(item.price) * item.quantity).toFixed(2)}
                 </Text>
-              </TouchableOpacity>
+              </View>
             ))}
           </View>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' }]}>
-            Pickup Details
-          </Text>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Special Instructions</Text>
+          <View style={styles.noteField}>
+            <Feather name="edit-3" size={16} color={colors.inkMuted} />
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={styles.noteInput}
               value={notes}
               onChangeText={setNotes}
-              placeholder="Add any special instructions..."
-              placeholderTextColor="#666"
+              placeholder="A note for the bar…"
+              placeholderTextColor={colors.inkMuted}
               multiline
-              numberOfLines={4}
             />
           </View>
-        </View>
-      </ScrollView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[
-            styles.payButton,
-            isProcessing && styles.payButtonDisabled
-          ]}
-          onPress={processOrder}
-          disabled={isProcessing}
-        >
-          <Text style={styles.payButtonText}>
-            {isProcessing ? "Processing..." : `Pay $${total.toFixed(2)}`}
-          </Text>
-        </TouchableOpacity>
+          <View style={styles.card}>
+            <Text style={styles.tipTitle}>For the barista</Text>
+            <Text style={styles.tipSub}>100% goes to the crew</Text>
+            <View style={styles.tipRow}>
+              {TIP_OPTIONS.map((pct) => (
+                <TouchableOpacity
+                  key={pct}
+                  style={[styles.tipPill, tipPercent === pct && styles.tipPillOn]}
+                  onPress={() => setTipPercent(pct)}
+                >
+                  <Text style={[styles.tipPillText, tipPercent === pct && styles.tipPillTextOn]}>
+                    {pct === 0 ? 'No tip' : `${pct}%`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.sumRow}>
+              <Text style={styles.sumLabel}>Subtotal</Text>
+              <Text style={styles.sumValue}>${Number(subtotal).toFixed(2)}</Text>
+            </View>
+            <View style={styles.sumRow}>
+              <Text style={styles.sumLabel}>Tip</Text>
+              <Text style={styles.sumValue}>${tip.toFixed(2)}</Text>
+            </View>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalText}>Total</Text>
+              <Text style={styles.totalText}>${total.toFixed(2)}</Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
+          <TouchableOpacity
+            style={[primaryButton, isProcessing && styles.payBtnDisabled]}
+            onPress={processOrder}
+            disabled={isProcessing}
+          >
+            <Text style={primaryButtonText}>
+              {isProcessing ? 'Processing…' : `Pay $${total.toFixed(2)}`}
+            </Text>
+          </TouchableOpacity>
+          <Text style={styles.payNote}>Your pickup code will be waiting at the bar.</Text>
+        </View>
       </View>
-    </View>
+    </GradientScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: Platform.OS === 'ios' ? 70 : 50,
+    paddingHorizontal: 22,
   },
-  scrollView: {
-    flex: 1,
-  },
-  header: {
+  head: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    paddingTop: 10,
-    position: 'relative',
-  },
-  backButton: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 1,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
-  },
-  section: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  orderItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  orderItemInfo: {
-    flex: 1,
-  },
-  orderItemName: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  orderItemQuantity: {
-    fontSize: 14,
-    color: '#666',
-  },
-  orderItemPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#eee',
-    marginVertical: 16,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    paddingVertical: 8,
     marginBottom: 8,
   },
-  summaryLabel: {
-    fontSize: 16,
-    color: '#666',
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    backgroundColor: colors.glassSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
-  summaryValue: {
-    fontSize: 16,
+  headTitle: {
+    ...display(21),
+    letterSpacing: 2.5,
   },
-  totalRow: {
-    marginTop: 8,
+  scrollContent: {
+    paddingBottom: 16,
   },
-  totalLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  card: {
+    ...glassCard,
+    borderRadius: 12,
+    padding: 17,
+    marginBottom: 13,
   },
-  totalValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#007AFF',
+  pickupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pickupBadge: {
+    width: 42,
+    height: 42,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    backgroundColor: colors.sageTint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pickupInfo: {
+    flex: 1,
+    marginLeft: 13,
+  },
+  pickupTitle: {
+    fontFamily: fonts.medium,
+    fontSize: 14.5,
+    letterSpacing: 0.7,
+    color: colors.ink,
+  },
+  pickupSub: {
+    fontFamily: fonts.light,
+    fontSize: 12,
+    letterSpacing: 0.2,
+    color: colors.inkSoft,
+    marginTop: 3,
+  },
+  cardHeading: {
+    fontFamily: fonts.display,
+    fontSize: 14,
+    letterSpacing: 2.8,
+    textTransform: 'uppercase',
+    color: colors.sage,
+    marginBottom: 6,
+  },
+  orderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    paddingVertical: 9,
+  },
+  orderName: {
+    flex: 1,
+    fontFamily: fonts.light,
+    fontSize: 14,
+    letterSpacing: 0.3,
+    color: colors.ink,
+    marginRight: 12,
+  },
+  orderQty: {
+    fontFamily: fonts.medium,
+    fontSize: 12.5,
+    color: colors.sage,
+  },
+  orderPrice: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.ink,
+  },
+  noteField: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: colors.glassSoft,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.sageBorder,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    marginBottom: 13,
+  },
+  noteInput: {
+    flex: 1,
+    fontFamily: fonts.light,
+    fontSize: 13.5,
+    color: colors.ink,
+    marginLeft: 10,
+    padding: 0,
+    minHeight: 38,
+    textAlignVertical: 'top',
+  },
+  tipTitle: {
+    fontFamily: fonts.medium,
+    fontSize: 14.5,
+    letterSpacing: 0.8,
+    color: colors.ink,
+  },
+  tipSub: {
+    fontFamily: fonts.light,
+    fontSize: 11.5,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
+    marginTop: 3,
+    marginBottom: 12,
   },
   tipRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
   },
-  tipOption: {
+  tipPill: {
     flex: 1,
-    paddingVertical: 10,
-    marginHorizontal: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
     alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  tipOptionSelected: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  tipOptionText: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '600',
-  },
-  tipOptionTextSelected: {
-    color: '#fff',
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: '#666',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
+    paddingVertical: 10,
     borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: 'rgba(79,130,104,0.35)',
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    marginHorizontal: 4,
   },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
+  tipPillOn: {
+    backgroundColor: colors.sage,
+    borderColor: colors.sage,
+  },
+  tipPillText: {
+    fontFamily: fonts.medium,
+    fontSize: 12.5,
+    letterSpacing: 0.6,
+    color: colors.inkSoft,
+  },
+  tipPillTextOn: {
+    color: colors.white,
+    fontFamily: fonts.semibold,
+  },
+  sumRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 5,
+  },
+  sumLabel: {
+    fontFamily: fonts.light,
+    fontSize: 13.5,
+    letterSpacing: 0.5,
+    color: colors.inkSoft,
+  },
+  sumValue: {
+    fontFamily: fonts.regular,
+    fontSize: 13.5,
+    color: colors.inkSoft,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: colors.hairline,
+    marginTop: 8,
+    paddingTop: 12,
+  },
+  totalText: {
+    ...display(17),
+    letterSpacing: 1.4,
   },
   footer: {
-    padding: 16,
-    backgroundColor: '#fff',
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: colors.hairline,
   },
-  payButton: {
-    backgroundColor: '#007AFF',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
+  payBtnDisabled: {
+    opacity: 0.55,
   },
-  payButtonDisabled: {
-    backgroundColor: '#999',
-  },
-  payButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  payNote: {
+    fontFamily: fonts.light,
+    fontSize: 11,
+    letterSpacing: 0.7,
+    color: colors.inkMuted,
+    textAlign: 'center',
+    marginTop: 11,
   },
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
+    paddingBottom: 80,
   },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  emptyTitle: {
+    ...display(20),
     marginTop: 16,
     marginBottom: 8,
   },
-  emptyStateSubtitle: {
-    fontSize: 16,
-    color: '#666',
+  emptySub: {
+    fontFamily: fonts.light,
+    fontSize: 14,
+    letterSpacing: 0.3,
+    color: colors.inkSoft,
     textAlign: 'center',
     marginBottom: 24,
   },
-  emptyStateButton: {
-    backgroundColor: '#007AFF',
+  emptyBtn: {
     paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 8,
-  },
-  emptyStateButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });
