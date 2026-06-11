@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "cafemvp.app"
-               BlueprintName = "cafemvp"
-               ReferencedContainer = "container:cafemvp.xcodeproj">
+               BuildableName = "BREAK.app"
+               BlueprintName = "BREAK"
+               ReferencedContainer = "container:BREAK.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "cafemvpTests.xctest"
-               BlueprintName = "cafemvpTests"
-               ReferencedContainer = "container:cafemvp.xcodeproj">
+               BuildableName = "BREAKTests.xctest"
+               BlueprintName = "BREAKTests"
+               ReferencedContainer = "container:BREAK.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "cafemvp.app"
-            BlueprintName = "cafemvp"
-            ReferencedContainer = "container:cafemvp.xcodeproj">
+            BuildableName = "BREAK.app"
+            BlueprintName = "BREAK"
+            ReferencedContainer = "container:BREAK.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "cafemvp.app"
-            BlueprintName = "cafemvp"
-            ReferencedContainer = "container:cafemvp.xcodeproj">
+            BuildableName = "BREAK.app"
+            BlueprintName = "BREAK"
+            ReferencedContainer = "container:BREAK.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

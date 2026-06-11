@@ -1,26 +1,49 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 
+import { supabase } from '../../lib/supabase';
+
 export default function AdminLogin() {
   const colorScheme = useColorScheme();
   const router = useRouter();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const isDark = colorScheme === 'dark';
   const textColor = isDark ? '#fff' : '#000';
   const bgColor = isDark ? '#000' : '#fff';
   const inputBgColor = isDark ? '#1c1c1e' : '#f2f2f7';
 
-  const handleLogin = () => {
-    // For demo purposes, using hardcoded credentials
-    if (username === 'admin' && password === 'admin') {
-      router.push('/(cafe-admin)/dashboard');
-    } else {
-      Alert.alert('Error', 'Invalid credentials. Please try again.');
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error || !data.user) {
+        Alert.alert('Error', error?.message ?? 'Invalid credentials. Please try again.');
+        return;
+      }
+
+      const { data: ownerRows, error: ownerError } = await supabase
+        .from('cafe_owners')
+        .select('cafe_id, role')
+        .eq('user_id', data.user.id)
+        .limit(1);
+
+      if (ownerError || !ownerRows || ownerRows.length === 0) {
+        await supabase.auth.signOut();
+        Alert.alert('Access denied', 'This account is not registered as a cafe owner.');
+        return;
+      }
+
+      router.replace('/(cafe-admin)/dashboard');
+    } catch (e) {
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -28,7 +51,7 @@ export default function AdminLogin() {
     <>
       <Stack.Screen
         options={{
-          headerTitle: "Cafe Admin Login",
+          headerTitle: "BREAK Admin Login",
           headerStyle: {
             backgroundColor: bgColor,
           },
@@ -42,20 +65,21 @@ export default function AdminLogin() {
       <View style={[styles.container, { backgroundColor: bgColor }]}>
         <View style={styles.logoContainer}>
           <FontAwesome name="coffee" size={64} color="#007AFF" />
-          <Text style={[styles.title, { color: textColor }]}>Cafe Admin Portal</Text>
+          <Text style={[styles.title, { color: textColor }]}>BREAK Admin Portal</Text>
         </View>
 
         <View style={styles.formContainer}>
           <View style={[styles.inputContainer, { backgroundColor: inputBgColor }]}>
-            <FontAwesome name="user" size={20} color="#666" style={styles.inputIcon} />
+            <FontAwesome name="envelope" size={20} color="#666" style={styles.inputIcon} />
             <TextInput
               style={[styles.input, { color: textColor }]}
-              placeholder="Username"
+              placeholder="Email"
               placeholderTextColor="#666"
-              value={username}
-              onChangeText={setUsername}
+              value={email}
+              onChangeText={setEmail}
               autoCapitalize="none"
               autoCorrect={false}
+              keyboardType="email-address"
             />
           </View>
 
@@ -74,11 +98,15 @@ export default function AdminLogin() {
           </View>
 
           <TouchableOpacity
-            style={[styles.loginButton, { opacity: (!username || !password) ? 0.7 : 1 }]}
+            style={[styles.loginButton, { opacity: (!email || !password || loading) ? 0.7 : 1 }]}
             onPress={handleLogin}
-            disabled={!username || !password}
+            disabled={!email || !password || loading}
           >
-            <Text style={styles.loginButtonText}>Login</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.loginButtonText}>Login</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -131,4 +159,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-}); 
+});

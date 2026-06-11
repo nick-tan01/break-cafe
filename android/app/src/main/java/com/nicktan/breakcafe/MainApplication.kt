@@ -1,4 +1,4 @@
-package com.anonymous.cafecomplete
+package com.nicktan.breakcafe
 
 import android.app.Application
 import android.content.res.Configuration

@@ -72,7 +72,7 @@ export default function ExploreScreen() {
         let loc = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
-        setLocation(location);
+        setLocation(loc);
 
         const dayOfWeek = new Date().getDay() === 0 ? 7 : new Date().getDay();
         const currentTime = new Date().toTimeString().slice(0, 5);

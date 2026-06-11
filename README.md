@@ -1,8 +1,12 @@
-# Welcome to your Expo app 👋
+# BREAK ☕️
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+*"I'm going on break to get a coffee — can I order you something?"*
 
-## Get started
+BREAK is a mobile app for discovering nearby independent cafes and ordering ahead for pickup. Customers browse cafes on a list or map, check menus and hours, and place pickup orders; cafe owners get an admin portal with an order queue, menu management, and analytics.
+
+Built with Expo (React Native + TypeScript) and Supabase.
+
+## Getting started
 
 1. Install dependencies
 
@@ -10,43 +14,52 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Configure environment variables
 
    ```bash
-    npx expo start
+   cp .env.example .env
+   # fill in your Supabase URL/anon key and Google OAuth client IDs
    ```
 
-In the output, you'll find options to open the app in a
+   All `EXPO_PUBLIC_*` variables are inlined into the client bundle at build time — never put server-side secrets (e.g. the Supabase service-role key) in this file. Restart the dev server after changing `.env`.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+3. Start the app
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+   ```bash
+   npx expo start
+   ```
 
-## Get a fresh project
+   Then open in an iOS simulator, Android emulator, or Expo Go.
 
-When you're ready, run:
+## Environment variables
 
-```bash
-npm run reset-project
+| Variable | Purpose |
+|---|---|
+| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon (public) key — safe to ship **only if Row Level Security is enabled** on all tables |
+| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | Google OAuth iOS client ID |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Google OAuth web client ID |
+| `EXPO_PUBLIC_GOOGLE_REDIRECT_URI` | OAuth redirect URI (auth.expo.io proxy) |
+
+## Project structure
+
+```
+app/
+  (auth)/        sign-in, sign-up (Supabase email/password + Google OAuth)
+  (tabs)/        customer app: explore (list/map), search, orders, profile
+  (cafe-admin)/  owner portal: login, dashboard, orders, menu, analytics
+  cafe/[id]      cafe detail page
+  checkout.tsx   cart review and order placement
+lib/supabase.ts  Supabase client (configured via .env)
+createDBscript.sql  reference schema (MySQL-flavored; live DB is Supabase/Postgres)
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Admin portal access
 
-## Learn more
+The owner portal (`/(cafe-admin)`) requires a real Supabase account that has a row in the `cafe_owners` table (`user_id` matching the Supabase auth user ID). Accounts without a `cafe_owners` row are signed out and denied access.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Current state & roadmap
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Working today: auth, location-based cafe discovery from Supabase on the home screen, maps.
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-# Test commit
-# Testing Git identity
+Still on mock data (next up): search results, order persistence (currently AsyncStorage), favorites, cafe detail, and the admin dashboard. After that: Stripe payments, a live order queue via Supabase Realtime, push notifications, and reviews.

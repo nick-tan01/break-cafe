@@ -30,9 +30,9 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    iosClientId: '826580028121-ajld04ru0ucgn6d20ofa78dpicdkp7r4.apps.googleusercontent.com',
-    webClientId: '826580028121-9m72cato1ca4j6m4gmgv75e9m90c0cp3.apps.googleusercontent.com',
-    redirectUri: 'https://auth.expo.io/@nathanlee727/cafe_complete',
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    redirectUri: process.env.EXPO_PUBLIC_GOOGLE_REDIRECT_URI,
   });
 
   useEffect(() => {

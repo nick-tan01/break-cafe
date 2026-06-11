@@ -1,4 +1,4 @@
-package com.anonymous.cafecomplete
+package com.nicktan.breakcafe
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
