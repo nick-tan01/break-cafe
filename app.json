@@ -56,7 +56,14 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-notifications",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.nicktan.breakcafe"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

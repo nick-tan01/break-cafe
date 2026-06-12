@@ -11,11 +11,14 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
+import type { ReactElement } from 'react';
 import 'react-native-reanimated';
 
 import { CartProvider } from '../lib/cart';
 import { colors, fonts } from '../lib/theme';
+import { registerForPushNotificationsAsync } from '../lib/notifications';
 import { supabase } from '../lib/supabase';
+import { stripeEnabled, stripePublishableKey } from '../lib/payments';
 import { Session } from '@supabase/supabase-js'
 
 // Daybreak is a light-only design; navigation chrome follows lib/theme.ts.
@@ -34,6 +37,28 @@ const DaybreakNavTheme = {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Payments are optional: with no EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY in .env
+// this renders its children unchanged and the app behaves exactly as before.
+// The Stripe SDK is require()d lazily — never imported at the top of the
+// file — because its JS module touches the native module at import time,
+// which would crash binaries built before the SDK was added. See
+// lib/payments.ts for the matching helper side of this rule.
+function PaymentsProvider({ children }: { children: ReactElement }) {
+  if (!stripeEnabled || !stripePublishableKey) {
+    return children;
+  }
+  const { StripeProvider } =
+    require('@stripe/stripe-react-native') as typeof import('@stripe/stripe-react-native');
+  return (
+    <StripeProvider
+      publishableKey={stripePublishableKey}
+      merchantIdentifier="merchant.com.nicktan.breakcafe"
+    >
+      {children}
+    </StripeProvider>
+  );
+}
 
 export default function RootLayout() {
   const router = useRouter();
@@ -90,31 +115,47 @@ export default function RootLayout() {
     };
   }, []);
 
+  // Once a session exists, register this device for order-status pushes.
+  // Fire-and-forget: registration no-ops on simulators / before EAS setup,
+  // and a failure here must never block the app. The ref keeps token
+  // refreshes (which re-fire onAuthStateChange) from re-registering.
+  const pushRegisteredRef = useRef(false);
+  useEffect(() => {
+    if (session && !pushRegisteredRef.current) {
+      pushRegisteredRef.current = true;
+      registerForPushNotificationsAsync().catch((err) => {
+        console.warn('Push registration failed:', err);
+      });
+    }
+  }, [session]);
+
   if (!loaded || !authChecked) {
     return null; // Prevent flicker
   }
 
 
   return (
-    <ThemeProvider value={DaybreakNavTheme}>
-      <CartProvider>
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: '#EDF0F7' },
-            headerTintColor: colors.ink,
-            headerTitleStyle: { fontFamily: fonts.display, fontSize: 18, color: colors.ink },
-            headerShadowVisible: false,
-            // back button shows only the chevron — never the previous route's
-            // internal name like "(tabs)"
-            headerBackButtonDisplayMode: 'minimal',
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(cafe-admin)" options={{ headerShown: false }} />
-        </Stack>
-        <StatusBar style="dark" />
-      </CartProvider>
-    </ThemeProvider>
+    <PaymentsProvider>
+      <ThemeProvider value={DaybreakNavTheme}>
+        <CartProvider>
+          <Stack
+            screenOptions={{
+              headerStyle: { backgroundColor: '#EDF0F7' },
+              headerTintColor: colors.ink,
+              headerTitleStyle: { fontFamily: fonts.display, fontSize: 18, color: colors.ink },
+              headerShadowVisible: false,
+              // back button shows only the chevron — never the previous route's
+              // internal name like "(tabs)"
+              headerBackButtonDisplayMode: 'minimal',
+            }}
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(cafe-admin)" options={{ headerShown: false }} />
+          </Stack>
+          <StatusBar style="dark" />
+        </CartProvider>
+      </ThemeProvider>
+    </PaymentsProvider>
   );
 }

@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCart } from '../lib/cart';
 import { supabase } from '../lib/supabase';
+import { stripeEnabled, createPaymentIntent, presentStripePaymentSheet } from '../lib/payments';
 import { colors, fonts, glassCard, display, overline, primaryButton, primaryButtonText } from '../lib/theme';
 import GradientScreen from '../components/GradientScreen';
 
@@ -34,6 +35,41 @@ export default function CheckoutScreen() {
       if (!user) {
         Alert.alert('Order failed', 'You need to be signed in to place an order.');
         return;
+      }
+
+      // Payment first, order second — but only when Stripe is configured.
+      // Without a publishable key this whole block is skipped and checkout
+      // behaves exactly as before (order placed directly, no payment).
+      if (stripeEnabled) {
+        // The edge function reprices the cart from the database — we send
+        // ids, quantities, and the tip percent, never prices — so a tampered
+        // client can't change what it pays.
+        let clientSecret: string;
+        try {
+          ({ clientSecret } = await createPaymentIntent({
+            cafeId,
+            items: items.map((item) => ({
+              menu_item_id: item.menuItemId,
+              quantity: item.quantity,
+            })),
+            tipPercent,
+          }));
+        } catch (error) {
+          console.error('Error preparing payment:', error);
+          Alert.alert('Payment failed', "We couldn't start your payment. Please try again.");
+          return;
+        }
+
+        const outcome = await presentStripePaymentSheet(clientSecret);
+        if (outcome === 'canceled') {
+          // The user closed the sheet on purpose — stop quietly and hand
+          // the button back (finally re-enables it).
+          return;
+        }
+        if (outcome === 'failed') {
+          Alert.alert('Payment failed', "Your card wasn't charged. Please try again.");
+          return;
+        }
       }
 
       // single transactional RPC — order + items succeed or fail together,

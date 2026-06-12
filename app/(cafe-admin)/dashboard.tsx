@@ -133,12 +133,21 @@ export default function AdminDashboard() {
               <Text style={styles.greetTitle}>Dashboard</Text>
               <Text style={styles.greetSub}>Your bar at a glance.</Text>
             </View>
-            <TouchableOpacity
-              style={styles.settingsBtn}
-              onPress={() => router.push('/settings')}
-            >
-              <Feather name="settings" size={17} color={colors.ink} />
-            </TouchableOpacity>
+            <View style={styles.headerBtns}>
+              <TouchableOpacity
+                style={styles.exitBtn}
+                onPress={() => router.replace('/(tabs)/profile')}
+              >
+                <Feather name="arrow-left" size={13} color={colors.sage} />
+                <Text style={styles.exitBtnText}>Exit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.settingsBtn}
+                onPress={() => router.push('/settings')}
+              >
+                <Feather name="settings" size={17} color={colors.ink} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Quick Stats */}
@@ -254,6 +263,25 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     color: colors.inkSoft,
     marginTop: 4,
+  },
+  headerBtns: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  exitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 38,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.sageBorder,
+    backgroundColor: colors.glassSoft,
+    paddingHorizontal: 14,
+  },
+  exitBtnText: {
+    ...overline(10),
+    letterSpacing: 1.6,
+    marginLeft: 6,
   },
   settingsBtn: {
     width: 38,

@@ -1,9 +1,10 @@
 -- ============================================================
 -- BREAK — Supabase (Postgres) schema
 -- Deployed to project xjopwpmwljhihtyjvxxy (org: Break) on 2026-06-11
--- via three migrations: break_initial_schema +
+-- via four migrations: break_initial_schema +
 -- lock_down_function_rpc_exposure (MCP) + place_order_rpc
--- (dashboard SQL editor). This file is the consolidated
+-- (dashboard SQL editor) + add_expo_push_token (MCP).
+-- This file is the consolidated
 -- equivalent for reference / disaster recovery: running it on a
 -- fresh project reproduces the deployed state.
 -- Column names match what the app queries (lowercase snake_case).
@@ -14,6 +15,7 @@ create table public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text,
   avatar_url text,
+  expo_push_token text, -- where this user's phone receives push notifications
   created_at timestamptz not null default now()
 );
 
