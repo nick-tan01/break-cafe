@@ -9,16 +9,32 @@ export default function CafeAdminLayout() {
   const segments = useSegments();
   const [checked, setChecked] = useState(false);
 
-  // Admin screens require a signed-in session; the login screen handles
-  // the cafe-owner role check itself.
+  // Every admin screen requires a signed-in session AND cafe-owner role.
+  // (RLS is the real server-side boundary; this guard keeps a signed-in
+  // non-owner from deep-linking straight into the admin UI past login.)
   useEffect(() => {
     let active = true;
     (async () => {
+      const onLogin = segments[segments.length - 1] === 'login';
       const { data: { session } } = await supabase.auth.getSession();
       if (!active) return;
-      const onLogin = segments[segments.length - 1] === 'login';
-      if (!session && !onLogin) {
-        router.replace('/(cafe-admin)/login');
+
+      if (!onLogin) {
+        if (!session) {
+          router.replace('/(cafe-admin)/login');
+          setChecked(true);
+          return;
+        }
+        // Confirm the signed-in user actually owns a cafe.
+        const { data: ownerRows } = await supabase
+          .from('cafe_owners')
+          .select('cafe_id')
+          .eq('user_id', session.user.id)
+          .limit(1);
+        if (!active) return;
+        if (!ownerRows || ownerRows.length === 0) {
+          router.replace('/(cafe-admin)/login');
+        }
       }
       setChecked(true);
     })();

@@ -24,9 +24,15 @@ import { createClient } from 'npm:@supabase/supabase-js@^2';
 // Must match TIP_OPTIONS in app/checkout.tsx.
 const ALLOWED_TIP_PERCENTS = [0, 10, 15, 20];
 
+// CORS origin is configurable via the PAYMENT_ALLOWED_ORIGIN secret. Defaults to
+// '*' so the native app (which isn't subject to CORS) keeps working unchanged;
+// set it to your web origin (e.g. https://app.break.coffee) to lock the function
+// down to a browser client when one exists. The function still requires a valid
+// user JWT regardless, so this is defense-in-depth, not the primary control.
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': Deno.env.get('PAYMENT_ALLOWED_ORIGIN') ?? '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Vary': 'Origin',
 };
 
 function json(status: number, body: Record<string, unknown>): Response {

@@ -203,23 +203,21 @@ create policy "public read menu" on public.menu_items
 create policy "owners manage menu" on public.menu_items
   for all to authenticated using (public.is_cafe_owner(cafe_id));
 
--- orders: customers create and view their own; cafe owners view/update
--- orders for their cafe
-create policy "customers create own orders" on public.orders
-  for insert to authenticated with check (user_id = auth.uid());
+-- orders: creation is ONLY through the place_order() RPC (SECURITY DEFINER),
+-- which reprices every line from menu_items server-side. Direct client INSERT
+-- is revoked below (see "revoke insert" near place_order) so a tampered client
+-- can never write arbitrary prices/totals or forge a $0 order.
 create policy "customers read own orders" on public.orders
   for select to authenticated using (user_id = auth.uid() or public.is_cafe_owner(cafe_id));
 create policy "owners update order status" on public.orders
   for update to authenticated using (public.is_cafe_owner(cafe_id));
+-- Least privilege: owners may change workflow columns (status, pickup_time,
+-- notes) but never the financial columns or ownership. Column-level REVOKE
+-- makes any UPDATE that touches these columns fail, independent of the policy.
+revoke update (subtotal, tip, total, user_id, cafe_id) on public.orders from authenticated;
 
--- order_items: follow the parent order's visibility
-create policy "insert items on own order" on public.order_items
-  for insert to authenticated with check (
-    exists (
-      select 1 from public.orders o
-      where o.order_id = order_items.order_id and o.user_id = auth.uid()
-    )
-  );
+-- order_items: created only by place_order() (direct client INSERT revoked
+-- below). Reads follow the parent order's visibility.
 create policy "read items of visible orders" on public.order_items
   for select to authenticated using (
     exists (
@@ -236,8 +234,18 @@ create policy "manage own favorites" on public.favorites
 -- reviews: public read; signed-in users write/edit their own
 create policy "public read reviews" on public.reviews
   for select using (true);
+-- Only a customer who has actually completed an order at this cafe may review
+-- it — blocks drive-by rating manipulation by bots/competitors.
 create policy "create own review" on public.reviews
-  for insert to authenticated with check (user_id = auth.uid());
+  for insert to authenticated with check (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.orders o
+      where o.user_id = auth.uid()
+        and o.cafe_id = reviews.cafe_id
+        and o.status = 'completed'
+    )
+  );
 create policy "edit own review" on public.reviews
   for update to authenticated using (user_id = auth.uid());
 create policy "delete own review" on public.reviews
@@ -247,12 +255,19 @@ create policy "delete own review" on public.reviews
 -- RPC: place_order — insert an order and its items atomically.
 -- Replaces the app's old two-step insert, which could strand an
 -- empty 'pending' order if the items insert failed.
--- SECURITY INVOKER on purpose: runs as the calling user, so the
--- policies above ("customers create own orders" / "insert items
--- on own order") stay the security boundary. Both inserts happen
--- in one transaction, so the items policy sees the new order row.
--- items: jsonb array of
---   { menu_item_id, quantity, unit_price, customizations }
+--
+-- SECURITY DEFINER: this function is the ONLY way to create an
+-- order (direct client INSERT on orders/order_items is revoked
+-- below). It NEVER trusts client-supplied money. It reprices every
+-- line from menu_items and derives the tip from an allowed percent,
+-- so a tampered client cannot forge a $0 order or change what it owes.
+-- The `subtotal`/`tip`/`total` params are kept only for call-signature
+-- compatibility with existing app builds; subtotal/total are ignored
+-- and `tip` is used solely to recover the intended tip PERCENT, which
+-- is re-validated against the server-computed subtotal.
+--
+-- items: jsonb array of { menu_item_id, quantity, customizations }
+-- (any client-supplied unit_price is ignored — priced from the DB).
 -- ============================================================
 create or replace function public.place_order(
   cafe_id bigint,
@@ -264,36 +279,92 @@ create or replace function public.place_order(
 )
 returns bigint
 language plpgsql
-security invoker
+security definer
 set search_path = public
 as $$
 declare
   new_order_id bigint;
+  v_subtotal   numeric(8,2) := 0;
+  v_tip        numeric(8,2) := 0;
+  v_tip_pct    int          := 0;
+  v_count      int;
 begin
   if auth.uid() is null then
     raise exception 'not authenticated';
   end if;
 
-  if items is null or jsonb_typeof(items) <> 'array' or jsonb_array_length(items) = 0 then
-    raise exception 'order must contain at least one item';
+  if items is null or jsonb_typeof(items) <> 'array'
+     or jsonb_array_length(items) = 0 or jsonb_array_length(items) > 50 then
+    raise exception 'order must contain between 1 and 50 items';
   end if;
+
+  -- Reject bad quantities up front (1..99 per line).
+  if exists (
+    select 1 from jsonb_array_elements(place_order.items) as it
+    where coalesce((it ->> 'quantity')::int, 0) < 1
+       or coalesce((it ->> 'quantity')::int, 0) > 99
+  ) then
+    raise exception 'each item quantity must be between 1 and 99';
+  end if;
+
+  -- Authoritative subtotal: sum(menu price * quantity) for AVAILABLE items
+  -- that actually belong to this cafe. Client prices are never read.
+  select coalesce(sum(mi.price * (it ->> 'quantity')::int), 0),
+         count(distinct mi.menu_item_id)
+    into v_subtotal, v_count
+  from jsonb_array_elements(place_order.items) as it
+  join public.menu_items mi
+    on mi.menu_item_id = (it ->> 'menu_item_id')::bigint
+   and mi.cafe_id = place_order.cafe_id
+   and mi.is_available;
+
+  -- Every requested item must resolve to a real, available menu row.
+  if v_count is null or v_count < (
+    select count(distinct (it ->> 'menu_item_id')::bigint)
+    from jsonb_array_elements(place_order.items) as it
+  ) then
+    raise exception 'order contains items that are not available at this cafe';
+  end if;
+
+  if v_subtotal <= 0 then
+    raise exception 'order subtotal must be positive';
+  end if;
+
+  -- Recover the tip PERCENT from the client's requested tip amount, then
+  -- recompute the tip from the server subtotal. Only 0/10/15/20% are allowed;
+  -- anything else (including a negative tip) falls back to no tip.
+  v_tip_pct := round((coalesce(place_order.tip, 0) / v_subtotal) * 100);
+  if v_tip_pct not in (0, 10, 15, 20) then
+    v_tip_pct := 0;
+  end if;
+  v_tip := round(v_subtotal * v_tip_pct / 100.0, 2);
 
   insert into public.orders (user_id, cafe_id, status, notes, subtotal, tip, total)
   values (auth.uid(), place_order.cafe_id, 'pending', place_order.notes,
-          place_order.subtotal, place_order.tip, place_order.total)
+          v_subtotal, v_tip, v_subtotal + v_tip)
   returning order_id into new_order_id;
 
+  -- unit_price comes from menu_items, NOT the client.
   insert into public.order_items (order_id, menu_item_id, quantity, unit_price, customizations)
   select new_order_id,
-         (item ->> 'menu_item_id')::bigint,
-         (item ->> 'quantity')::int,
-         (item ->> 'unit_price')::numeric,
-         nullif(item -> 'customizations', 'null'::jsonb)
-  from jsonb_array_elements(place_order.items) as item;
+         mi.menu_item_id,
+         (it ->> 'quantity')::int,
+         mi.price,
+         nullif(it -> 'customizations', 'null'::jsonb)
+  from jsonb_array_elements(place_order.items) as it
+  join public.menu_items mi
+    on mi.menu_item_id = (it ->> 'menu_item_id')::bigint
+   and mi.cafe_id = place_order.cafe_id;
 
   return new_order_id;
 end;
 $$;
+
+-- Lock down order creation: the SECURITY DEFINER place_order() above is the
+-- single creation path. No role may INSERT into orders/order_items directly,
+-- which closes the "POST /rest/v1/orders with unit_price:0" bypass.
+revoke insert on public.orders      from anon, authenticated;
+revoke insert on public.order_items from anon, authenticated;
 
 -- signed-in customers only; anon never places orders
 revoke execute on function public.place_order(bigint, text, numeric, numeric, numeric, jsonb) from public, anon;

@@ -51,7 +51,7 @@ app/
   cafe/[id]      cafe detail page
   checkout.tsx   cart review and order placement
 lib/supabase.ts  Supabase client (configured via .env)
-createDBscript.sql  reference schema (MySQL-flavored; live DB is Supabase/Postgres)
+supabase/schema.sql  Postgres schema + RLS (source of truth; live DB is Supabase)
 ```
 
 ## Admin portal access
