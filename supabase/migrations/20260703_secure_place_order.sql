@@ -111,7 +111,10 @@ revoke insert on public.orders      from anon, authenticated;
 revoke insert on public.order_items from anon, authenticated;
 
 -- 3) Least privilege on order updates (owners): no financial/ownership columns.
-revoke update (subtotal, tip, total, user_id, cafe_id) on public.orders from authenticated;
+-- A column-level REVOKE is a no-op while the role holds a table-level UPDATE
+-- grant, so drop the table grant and re-grant only the workflow columns.
+revoke update on public.orders from authenticated;
+grant update (status, pickup_time) on public.orders to authenticated;
 
 -- 4) Re-assert execute grants on the function.
 revoke execute on function public.place_order(bigint, text, numeric, numeric, numeric, jsonb) from public, anon;

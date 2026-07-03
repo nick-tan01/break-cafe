@@ -211,10 +211,13 @@ create policy "customers read own orders" on public.orders
   for select to authenticated using (user_id = auth.uid() or public.is_cafe_owner(cafe_id));
 create policy "owners update order status" on public.orders
   for update to authenticated using (public.is_cafe_owner(cafe_id));
--- Least privilege: owners may change workflow columns (status, pickup_time,
--- notes) but never the financial columns or ownership. Column-level REVOKE
--- makes any UPDATE that touches these columns fail, independent of the policy.
-revoke update (subtotal, tip, total, user_id, cafe_id) on public.orders from authenticated;
+-- Least privilege: owners may change only the workflow columns (status,
+-- pickup_time), never the financial columns or ownership. A column-level
+-- REVOKE alone is a no-op while a table-level UPDATE grant stands (the table
+-- grant covers every column), so drop the table grant and re-grant just the
+-- workflow columns. RLS ("owners update order status") still governs rows.
+revoke update on public.orders from authenticated;
+grant update (status, pickup_time) on public.orders to authenticated;
 
 -- order_items: created only by place_order() (direct client INSERT revoked
 -- below). Reads follow the parent order's visibility.
